@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from openai import AsyncOpenAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Material, QuizAttempt, ScorePrediction, StudentProfileEntry, TrackingSession
+from app.services.llm import llm_client, llm_model
 from app.services.rag import embed_text
 from app.settings import get_settings
 
@@ -124,9 +124,9 @@ async def generate_profile_entry(student_id: int, quiz_attempt_id: int, db: Asyn
     prompt = build_entry_prompt(material, features, attempt.score, attempt.max_score, predicted)
 
     settings = get_settings()
-    if settings.resolved_llm_provider == "openrouter":
-        client = AsyncOpenAI(base_url=settings.openrouter_base_url, api_key=settings.openrouter_api_key)
-        response = await client.chat.completions.create(model=settings.llm_model, messages=[{"role": "user", "content": prompt}])
+    if settings.resolved_llm_provider != "deterministic":
+        client = llm_client()
+        response = await client.chat.completions.create(model=llm_model(), messages=[{"role": "user", "content": prompt}])
         content = response.choices[0].message.content or "{}"
         entry_json = parse_profile_entry_content(content)
     else:

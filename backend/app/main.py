@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, classes, lessons, materials, profiles, quizzes, tracking
+from app.api import auth, classes, lesson_studio, lessons, materials, profiles, quizzes, tracking
 from app.redis import close_redis
 from app.settings import get_settings
 
@@ -25,6 +25,7 @@ app.include_router(quizzes.router)
 app.include_router(tracking.router)
 app.include_router(profiles.router)
 app.include_router(lessons.router)
+app.include_router(lesson_studio.router)
 
 
 @app.get("/health")

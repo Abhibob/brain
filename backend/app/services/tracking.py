@@ -11,8 +11,9 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Material, TrackingEvent, TrackingSession
+from app.models import Material, SectionFocusScore, TrackingEvent, TrackingSession
 from app.redis import get_redis
+from app.services.focus import compute_focus_score, compute_section_focus
 
 
 async def ingest_event(redis: Redis, session_id: int, event_type: str, data: dict[str, Any], client_ts: int) -> None:
@@ -40,9 +41,26 @@ def _numeric(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _section_view_counts(events: list[dict[str, Any]]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for event in events:
+        if (event.get("event_type") or event.get("type")) != "section_view":
+            continue
+        data = event.get("event_data") or event.get("data") or {}
+        sid = str(data.get("section_id") or data.get("sectionId") or "")
+        if sid:
+            counts[sid] += 1
+    return dict(counts)
+
+
 def compute_features(events: list[dict[str, Any]], material: Material, started_at: datetime, ended_at: datetime | None) -> dict[str, Any]:
     if ended_at is None:
         ended_at = datetime.now(UTC)
+    # SQLite's func.now() returns naive datetimes; the API sets aware ones. Normalize.
+    if started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=UTC)
+    if ended_at.tzinfo is None:
+        ended_at = ended_at.replace(tzinfo=UTC)
     duration_s = max((ended_at - started_at).total_seconds(), 0.0)
     if events:
         first_ts = min(_numeric(event.get("client_ts")) for event in events) / 1000
@@ -162,6 +180,43 @@ async def persist_and_compute_features(session_id: int, db: AsyncSession) -> dic
     ]
     features = compute_features(normalized, session.material, session.started_at, session.ended_at)
     session.features = features
+
+    focus = compute_focus_score(features)
+    session.focus_score = focus["focus_score"]
+    session.focus_breakdown = focus["breakdown"]
+    session.focus_label = focus["label"]
+
+    section_meta = [
+        {"section_id": section.id, "word_count": section.word_count, "title": section.title}
+        for section in session.material.sections
+    ]
+    section_times = {key: float(value) for key, value in (features.get("time_per_section") or {}).items()}
+    view_counts = _section_view_counts(normalized)
+    section_focus_rows = compute_section_focus(normalized, section_meta, section_times, view_counts)
+
+    existing_rows = (
+        await db.scalars(
+            select(SectionFocusScore).where(SectionFocusScore.session_id == session_id)
+        )
+    ).all()
+    existing_by_section = {row.section_id: row for row in existing_rows}
+    for row in section_focus_rows:
+        stored = existing_by_section.get(row["section_id"])
+        if stored is None:
+            db.add(
+                SectionFocusScore(
+                    session_id=session_id,
+                    section_id=row["section_id"],
+                    focus_score=row["focus_score"],
+                    breakdown=row["breakdown"],
+                    label=row["label"],
+                )
+            )
+        else:
+            stored.focus_score = row["focus_score"]
+            stored.breakdown = row["breakdown"]
+            stored.label = row["label"]
+
     await db.commit()
     return features
 

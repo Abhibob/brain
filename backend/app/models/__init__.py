@@ -125,11 +125,15 @@ class TrackingSession(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     features: Mapped[dict[str, Any] | None] = mapped_column(json_type())
+    focus_score: Mapped[float | None] = mapped_column(Float)
+    focus_breakdown: Mapped[dict[str, Any] | None] = mapped_column(json_type())
+    focus_label: Mapped[str | None] = mapped_column(String(32))
 
     student: Mapped[User] = relationship(foreign_keys=[student_id])
     material: Mapped[Material] = relationship()
     events: Mapped[list["TrackingEvent"]] = relationship(back_populates="session", cascade="all, delete-orphan")
     prediction: Mapped["ScorePrediction | None"] = relationship(back_populates="session", cascade="all, delete-orphan")
+    section_focus: Mapped[list["SectionFocusScore"]] = relationship(back_populates="session", cascade="all, delete-orphan")
 
 
 class QuizAttempt(Base):
@@ -206,6 +210,162 @@ class StudentProfileEntry(Base):
 
     student: Mapped[User] = relationship(foreign_keys=[user_id])
     material: Mapped[Material | None] = relationship(foreign_keys=[trigger_material_id])
+
+
+class SectionFocusScore(Base):
+    __tablename__ = "section_focus_scores"
+    __table_args__ = (UniqueConstraint("session_id", "section_id", name="uq_section_focus_session_section"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tracking_sessions.id", ondelete="CASCADE"), index=True)
+    section_id: Mapped[int] = mapped_column(ForeignKey("material_sections.id", ondelete="CASCADE"), index=True)
+    focus_score: Mapped[float] = mapped_column(Float)
+    breakdown: Mapped[dict[str, Any]] = mapped_column(json_type())
+    label: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped[TrackingSession] = relationship(back_populates="section_focus")
+    section: Mapped[MaterialSection] = relationship()
+
+
+class MaterialTopic(Base):
+    __tablename__ = "material_topics"
+    __table_args__ = (UniqueConstraint("material_id", "topic", name="uq_material_topic"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    material_id: Mapped[int] = mapped_column(ForeignKey("materials.id", ondelete="CASCADE"), index=True)
+    topic: Mapped[str] = mapped_column(String(255), index=True)
+    weight: Mapped[float] = mapped_column(Float, default=1.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserLearningProfile(Base):
+    __tablename__ = "user_learning_profiles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
+    style_vector: Mapped[dict[str, Any]] = mapped_column(json_type())
+    rolling_focus_score: Mapped[float] = mapped_column(Float, default=0.5)
+    rolling_reading_speed_wpm: Mapped[float] = mapped_column(Float, default=0.0)
+    rolling_completion_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    preferred_session_length_s: Mapped[float] = mapped_column(Float, default=0.0)
+    peak_focus_time_of_day: Mapped[dict[str, Any]] = mapped_column(json_type())
+    engagement_fingerprint: Mapped[dict[str, Any]] = mapped_column(json_type())
+    behavioral_signals: Mapped[dict[str, Any]] = mapped_column(json_type())
+    session_count: Mapped[int] = mapped_column(Integer, default=0)
+    lesson_count: Mapped[int] = mapped_column(Integer, default=0)
+    quiz_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_focus_label: Mapped[str | None] = mapped_column(String(32))
+    last_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+
+
+class TopicMasteryNode(Base):
+    __tablename__ = "topic_mastery_nodes"
+    __table_args__ = (UniqueConstraint("user_id", "topic", name="uq_topic_mastery_user_topic"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    topic: Mapped[str] = mapped_column(String(255), index=True)
+    mastery_score: Mapped[float] = mapped_column(Float, default=0.5)
+    exposure_score: Mapped[float] = mapped_column(Float, default=0.5)
+    encounter_count: Mapped[int] = mapped_column(Integer, default=0)
+    quiz_sample_count: Mapped[int] = mapped_column(Integer, default=0)
+    struggle_signal: Mapped[float] = mapped_column(Float, default=0.0)
+    strength_signal: Mapped[float] = mapped_column(Float, default=0.0)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    embedding: Mapped[list[float] | None] = mapped_column(vector_type())
+
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+
+
+class TopicMasteryEdge(Base):
+    __tablename__ = "topic_mastery_edges"
+    __table_args__ = (
+        UniqueConstraint("user_id", "from_topic", "to_topic", "relation", name="uq_topic_edge"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    from_topic: Mapped[str] = mapped_column(String(255), index=True)
+    to_topic: Mapped[str] = mapped_column(String(255), index=True)
+    relation: Mapped[str] = mapped_column(String(32))
+    weight: Mapped[float] = mapped_column(Float, default=1.0)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LessonAsset(Base):
+    __tablename__ = "lesson_assets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(Enum("reading", "quiz", "video", "practice", name="lesson_asset_kind"))
+    topic: Mapped[str] = mapped_column(String(255), index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    payload: Mapped[dict[str, Any]] = mapped_column(json_type())
+    external_url: Mapped[str | None] = mapped_column(String(1024))
+    generated_by: Mapped[str] = mapped_column(String(32), default="llm")
+    embedding: Mapped[list[float] | None] = mapped_column(vector_type())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LessonPlanDraft(Base):
+    __tablename__ = "lesson_plan_drafts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    educator_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), index=True)
+    topic: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Enum("draft", "ready", "published", name="lesson_plan_status"), default="draft")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    nodes: Mapped[list["LessonPlanNode"]] = relationship(back_populates="draft", cascade="all, delete-orphan", order_by="LessonPlanNode.order_index")
+    edges: Mapped[list["LessonPlanEdge"]] = relationship(back_populates="draft", cascade="all, delete-orphan")
+
+
+class LessonPlanNode(Base):
+    __tablename__ = "lesson_plan_nodes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    draft_id: Mapped[int] = mapped_column(ForeignKey("lesson_plan_drafts.id", ondelete="CASCADE"), index=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("lesson_assets.id", ondelete="CASCADE"), index=True)
+    order_index: Mapped[int] = mapped_column(Integer, default=0)
+    label: Mapped[str | None] = mapped_column(String(255))
+    notes: Mapped[str | None] = mapped_column(Text)
+    teacher_adjusted: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    draft: Mapped[LessonPlanDraft] = relationship(back_populates="nodes")
+    asset: Mapped[LessonAsset] = relationship()
+
+
+class LessonPlanEdge(Base):
+    __tablename__ = "lesson_plan_edges"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    draft_id: Mapped[int] = mapped_column(ForeignKey("lesson_plan_drafts.id", ondelete="CASCADE"), index=True)
+    from_node_id: Mapped[int] = mapped_column(ForeignKey("lesson_plan_nodes.id", ondelete="CASCADE"), index=True)
+    to_node_id: Mapped[int] = mapped_column(ForeignKey("lesson_plan_nodes.id", ondelete="CASCADE"), index=True)
+    condition: Mapped[dict[str, Any] | None] = mapped_column(json_type())
+
+    draft: Mapped[LessonPlanDraft] = relationship(back_populates="edges")
+
+
+class AssetFitScore(Base):
+    __tablename__ = "asset_fit_scores"
+    __table_args__ = (UniqueConstraint("asset_id", "student_id", name="uq_asset_fit_asset_student"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("lesson_assets.id", ondelete="CASCADE"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    fit_score: Mapped[int] = mapped_column(Integer)
+    rationale: Mapped[str] = mapped_column(Text)
+    components: Mapped[dict[str, Any]] = mapped_column(json_type())
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class PersonalizedLesson(Base):

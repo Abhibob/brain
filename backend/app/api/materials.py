@@ -125,12 +125,17 @@ async def update_material(
         material.type = payload.type
     if payload.order_index is not None:
         material.order_index = payload.order_index
-    if payload.sections is not None:
+    sections_replaced = payload.sections is not None
+    if sections_replaced:
         await _replace_sections(db, material, payload.sections)
         await db.execute(delete(PersonalizedLesson).where(PersonalizedLesson.base_material_id == material.id))
+    published_at = material.published_at
     await db.commit()
-    if material.published_at is not None:
+    if published_at is not None:
         await _run_publish_personalization(db, material)
+    if sections_replaced:
+        # The stale sections collection is still cached on the session; drop it before reload.
+        db.expunge(material)
     material = await _load_material(db, material.id)
     return MaterialOut(
         id=material.id,

@@ -177,18 +177,28 @@ export default function ClassPage() {
         {auth?.user.role === "educator" || auth?.user.role === "researcher" ? (
           <section className="stack">
             <h2>Roster</h2>
-            {roster.map(student => (
-              auth.user.role === "researcher" ? (
-                <Link className="card" href={`/researcher/students/${student.id}/profile`} key={student.id}>
-                  <strong>{student.email}</strong>
-                  <p className="muted">{student.profile_entry_count || 0} profile entries</p>
-                </Link>
-              ) : (
+            <div className="grid">
+              {roster.map(student => (
                 <article className="card" key={student.id}>
-                  <strong>{student.email}</strong>
+                  <Link
+                    href={`/students/${student.id}`}
+                    style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}
+                  >
+                    {student.email}
+                  </Link>
+                  {auth.user.role === "researcher" && (
+                    <p className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+                      {student.profile_entry_count || 0} profile entries
+                    </p>
+                  )}
+                  <div className="toolbar" style={{ marginTop: 10 }}>
+                    <Link className="button secondary" href={`/students/${student.id}`}>
+                      View learning
+                    </Link>
+                  </div>
                 </article>
-              )
-            ))}
+              ))}
+            </div>
           </section>
         ) : null}
       </main>

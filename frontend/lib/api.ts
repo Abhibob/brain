@@ -109,6 +109,115 @@ export type ProfileEntry = {
   created_at: string;
 };
 
+export type StyleVector = {
+  pace: number;
+  depth: number;
+  attention_stability: number;
+  engagement_mode: number;
+  revisit_tendency: number;
+  visual_orientation: number;
+  motor_style: number;
+};
+
+export type UserLearningProfile = {
+  user_id: number;
+  style_vector: StyleVector;
+  rolling_focus_score: number;
+  rolling_reading_speed_wpm: number;
+  rolling_completion_rate: number;
+  preferred_session_length_s: number;
+  engagement_fingerprint: Record<string, number | string>;
+  behavioral_signals: {
+    narrative_notes?: Array<{ note: string; ts: string }>;
+    content_preferences?: Record<string, number>;
+    recent_hints?: string[];
+  };
+  peak_focus_time_of_day: { histogram?: Record<string, number>; peak_hour?: string | null };
+  session_count: number;
+  lesson_count: number;
+  quiz_count: number;
+  last_focus_label: string | null;
+  last_updated_at: string | null;
+};
+
+export type TopicNode = {
+  topic: string;
+  mastery_score: number;
+  exposure_score: number;
+  encounter_count: number;
+  quiz_sample_count: number;
+  struggle_signal: number;
+  strength_signal: number;
+  last_seen_at: string | null;
+};
+
+export type TopicEdge = {
+  from_topic: string;
+  to_topic: string;
+  relation: string;
+  weight: number;
+};
+
+export type LearningView = {
+  student_id: number;
+  learning_profile: UserLearningProfile | null;
+  top_mastery: TopicNode[];
+  top_struggles: TopicNode[];
+  topic_edges: TopicEdge[];
+  recent_focus: Array<{
+    session_id: number;
+    material_id: number;
+    focus_score: number;
+    focus_label: string;
+    ended_at: string | null;
+  }>;
+  narrative_notes: Array<{ note: string; ts: string }>;
+};
+
+export type LessonAsset = {
+  id: number;
+  kind: "reading" | "quiz" | "video" | "practice";
+  topic: string;
+  title: string;
+  payload: Record<string, any>;
+  external_url: string | null;
+  generated_by: string;
+};
+
+export type LessonPlanNode = {
+  id: number;
+  asset_id: number;
+  order_index: number;
+  label: string | null;
+  notes: string | null;
+  teacher_adjusted: boolean;
+  asset: LessonAsset | null;
+  fit_score: number | null;
+  rationale: string | null;
+};
+
+export type LessonPlanCandidate = {
+  asset: LessonAsset;
+  fit_score: number;
+  rationale: string;
+  components: Record<string, number>;
+};
+
+export type LessonPlanDraft = {
+  id: number;
+  educator_id: number;
+  student_id: number;
+  class_id: number | null;
+  topic: string;
+  description: string | null;
+  status: "draft" | "ready" | "published";
+  nodes: LessonPlanNode[];
+  edges: Array<{ id: number; from_node_id: number; to_node_id: number; condition: Record<string, unknown> | null }>;
+  candidates: LessonPlanCandidate[];
+  created_at: string;
+  updated_at: string;
+};
+
 const AUTH_KEY = "edutrack.auth";
 
 export function getStoredAuth(): AuthState | null {
@@ -148,6 +257,8 @@ export const api = {
     request<AuthState>("/auth/register", { method: "POST", body: JSON.stringify(payload) }),
   login: (payload: { email: string; password: string }) =>
     request<AuthState>("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
+  demoLogin: (role: "student" | "educator" | "researcher") =>
+    request<AuthState>("/auth/demo", { method: "POST", body: JSON.stringify({ role }) }),
   refresh: (refresh_token: string) =>
     request<AuthState>("/auth/refresh", { method: "POST", body: JSON.stringify({ refresh_token }) }),
   listClasses: () => request<ClassOut[]>("/classes"),
@@ -192,5 +303,60 @@ export const api = {
       body: JSON.stringify({})
     }),
   getProfile: (studentId: number) =>
-    request<{ student_id: number; entry_count: number; entries: ProfileEntry[] }>(`/students/${studentId}/profile`)
+    request<{ student_id: number; entry_count: number; entries: ProfileEntry[] }>(`/students/${studentId}/profile`),
+  getLearningProfile: (studentId: number) =>
+    request<UserLearningProfile>(`/students/${studentId}/learning-profile`),
+  getMastery: (studentId: number, topic?: string) =>
+    request<{ seed_topic: string | null; nodes: TopicNode[]; edges: TopicEdge[] }>(
+      `/students/${studentId}/mastery${topic ? `?topic=${encodeURIComponent(topic)}` : ""}`
+    ),
+  getLearningContext: (studentId: number, topic: string) =>
+    request<{
+      style_summary_lines: string[];
+      mastery_lines: string[];
+      mastery_nodes: Array<Record<string, unknown>>;
+      topic_edges: Array<Record<string, unknown>>;
+      profile_entries: Array<Record<string, unknown>>;
+      recent_focus: Array<Record<string, unknown>>;
+      recent_hints: string[];
+      seed_text: string;
+    }>(`/students/${studentId}/learning-context?topic=${encodeURIComponent(topic)}`),
+  getStudentLessonPlan: (studentId: number, topic: string, material_id?: number) =>
+    request<{
+      topic: string;
+      sections: Array<{ title: string; angle: string; why_this_works_for_them: string; estimated_word_count: number }>;
+      prerequisites_to_reinforce: string[];
+      cautions: string[];
+      style_summary: string[];
+    }>(`/students/${studentId}/lesson-plan`, {
+      method: "POST",
+      body: JSON.stringify({ topic, material_id })
+    }),
+  getLearningView: (studentId: number) =>
+    request<LearningView>(`/teacher/students/${studentId}/learning-view`),
+  createLessonPlan: (payload: {
+    student_id: number;
+    topic: string;
+    description?: string;
+    class_id?: number;
+    material_id?: number;
+  }) => request<LessonPlanDraft>("/teacher/lesson-plans", { method: "POST", body: JSON.stringify(payload) }),
+  getLessonPlan: (draftId: number) => request<LessonPlanDraft>(`/teacher/lesson-plans/${draftId}`),
+  regenerateLessonPlan: (draftId: number) =>
+    request<LessonPlanDraft>(`/teacher/lesson-plans/${draftId}/regenerate`, { method: "POST" }),
+  patchLessonPlan: (
+    draftId: number,
+    nodes: Array<{ asset_id: number; order_index: number; label?: string; notes?: string; teacher_adjusted?: boolean }>
+  ) =>
+    request<LessonPlanDraft>(`/teacher/lesson-plans/${draftId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ nodes })
+    }),
+  publishLessonPlan: (draftId: number, targetMaterialId?: number) =>
+    request<MaterialOut>(
+      `/teacher/lesson-plans/${draftId}/publish${
+        targetMaterialId !== undefined ? `?target_material_id=${targetMaterialId}` : ""
+      }`,
+      { method: "POST" }
+    )
 };

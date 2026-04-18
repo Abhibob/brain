@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ClassOut, clearAuth, getStoredAuth } from "@/lib/api";
+import { api, AuthState, ClassOut, clearAuth, getStoredAuth } from "@/lib/api";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -11,15 +11,17 @@ export default function DashboardPage() {
   const [classId, setClassId] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const auth = getStoredAuth();
+  const [auth, setAuth] = useState<AuthState | null>(null);
 
   useEffect(() => {
-    if (!auth) {
+    const stored = getStoredAuth();
+    if (!stored) {
       router.replace("/login");
       return;
     }
-    api.listClasses().then(setClasses).catch(error => setError(error.message));
-  }, [auth, router]);
+    setAuth(stored);
+    api.listClasses().then(setClasses).catch(err => setError(err.message));
+  }, [router]);
 
   async function enroll(event: FormEvent) {
     event.preventDefault();

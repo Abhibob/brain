@@ -8,9 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_role
 from app.db import AsyncSessionLocal, get_db
-from app.models import Class, Enrollment, Material, ScorePrediction, TrackingSession, User
+from app.models import Class, Enrollment, Material, ScorePrediction, SectionFocusScore, TrackingSession, User
 from app.redis import get_redis
-from app.schemas import SessionEndOut, SessionPredictionOut, SessionStart, SessionStartOut
+from app.schemas import (
+    SectionFocusOut,
+    SessionEndOut,
+    SessionFocusOut,
+    SessionPredictionOut,
+    SessionStart,
+    SessionStartOut,
+)
 from app.security import decode_token
 from app.services.tracking import ingest_event
 from app.workers import tasks
@@ -51,6 +58,20 @@ async def end_session(
     tasks.extract_features_and_predict.delay(session_id)
     await db.refresh(session)
     prediction = await db.scalar(select(ScorePrediction).where(ScorePrediction.session_id == session_id))
+    section_rows = (
+        await db.scalars(
+            select(SectionFocusScore)
+            .where(SectionFocusScore.session_id == session_id)
+            .order_by(SectionFocusScore.section_id.asc())
+        )
+    ).all()
+    focus_out: SessionFocusOut | None = None
+    if session.focus_score is not None:
+        focus_out = SessionFocusOut(
+            focus_score=session.focus_score,
+            breakdown=session.focus_breakdown or {},
+            label=session.focus_label or "engaged",
+        )
     return SessionEndOut(
         session_id=session.id,
         features=session.features,
@@ -62,6 +83,16 @@ async def end_session(
         }
         if prediction
         else None,
+        focus=focus_out,
+        section_focus=[
+            SectionFocusOut(
+                section_id=row.section_id,
+                focus_score=row.focus_score,
+                breakdown=row.breakdown,
+                label=row.label,
+            )
+            for row in section_rows
+        ],
     )
 
 
