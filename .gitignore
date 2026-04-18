@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+backend/.venv/
+backend/.verify/
+
+frontend/node_modules/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+
