@@ -168,6 +168,36 @@ class SessionPredictionOut(BaseModel):
     actual_score: float | None
 
 
+class GazeHeatmapSectionOut(BaseModel):
+    section_id: str
+    title: str
+    order_index: int
+    fixation_count: int
+    time_s: float
+    fixations: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class GazeHeatmapOut(BaseModel):
+    session_id: int
+    material_id: int
+    material_title: str
+    started_at: datetime
+    ended_at: datetime | None
+    gaze_present: bool
+    has_calibration: bool
+    focus_score: float | None
+    focus_label: str | None
+    attention_source: str
+    total_time_s: float
+    reading_time_s: float
+    off_content_time_s: float
+    lost_pct: float
+    entropy: float
+    fixation_count: int
+    fixation_ms_mean: float
+    sections: list[GazeHeatmapSectionOut] = Field(default_factory=list)
+
+
 class ClassAnalyticsOut(BaseModel):
     class_id: int
     model: dict[str, Any] | None

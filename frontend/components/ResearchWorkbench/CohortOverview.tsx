@@ -43,13 +43,22 @@ export function CohortOverview({
         actual: Number(student.average_actual),
         residual: Number(student.average_predicted) - Number(student.average_actual)
       })) || [];
+  const gazeByTitle = new Map(
+    workbench.materials
+      .filter(m => m.gaze_stats)
+      .map(m => [m.title, m.gaze_stats!] as const)
+  );
   const engagement =
-    analytics?.material_engagement.map(item => ({
-      title: item.title,
-      completion: Number((item.average_completion_rate * 100).toFixed(1)),
-      idle: Number(item.average_idle_s.toFixed(1)),
-      time: Number(item.average_total_time_s.toFixed(1))
-    })) || [];
+    analytics?.material_engagement.map(item => {
+      const stats = gazeByTitle.get(item.title);
+      return {
+        title: item.title,
+        completion: Number((item.average_completion_rate * 100).toFixed(1)),
+        idle: Number(item.average_idle_s.toFixed(1)),
+        time: Number(item.average_total_time_s.toFixed(1)),
+        gazePresent: stats ? Number((stats.gaze_present_pct * 100).toFixed(1)) : 0
+      };
+    }) || [];
 
   return (
     <section className="research-panel">
@@ -108,9 +117,10 @@ export function CohortOverview({
               <BarChart data={engagement}>
                 <CartesianGrid stroke="#d8ded8" strokeDasharray="3 3" />
                 <XAxis dataKey="title" tick={{ fontSize: 11 }} />
-                <YAxis />
+                <YAxis domain={[0, 100]} />
                 <Tooltip />
                 <Bar dataKey="completion" name="Completion %" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="gazePresent" name="Gaze present %" fill="#0f7b66" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

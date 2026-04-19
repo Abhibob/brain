@@ -239,3 +239,151 @@ class TestPrediction:
     def test_unknown_session_404(self, client: TestClient, researcher: dict[str, Any]) -> None:
         response = client.get("/sessions/99999/prediction", headers=auth_headers(researcher["access_token"]))
         assert response.status_code == 404
+
+
+class TestGazeHeatmap:
+    def _run_session_with_gaze(
+        self,
+        client: TestClient,
+        student_token: str,
+        material: dict[str, Any],
+    ) -> int:
+        section_ids = [s["id"] for s in material["sections"]]
+        started = client.post(
+            "/sessions/start",
+            json={"material_id": material["id"]},
+            headers=auth_headers(student_token),
+        )
+        assert started.status_code == 200, started.text
+        session_id = started.json()["session_id"]
+
+        with client.websocket_connect(f"/track/{session_id}?token={student_token}") as ws:
+            ws.send_json({
+                "type": "event",
+                "data": {"event_type": "gaze_calibrated", "points": 9, "has_calibration": True},
+                "ts": 1,
+            })
+            ws.receive_json()
+            ws.send_json({
+                "type": "event",
+                "data": {"event_type": "section_view", "section_id": str(section_ids[0])},
+                "ts": 10,
+            })
+            ws.receive_json()
+            for offset in range(5):
+                ws.send_json({
+                    "type": "event",
+                    "data": {
+                        "event_type": "gaze_fixation",
+                        "section_id": str(section_ids[0]),
+                        "rel_x": 0.3 + offset * 0.05,
+                        "rel_y": 0.4,
+                        "x": 200,
+                        "y": 300,
+                        "duration_ms": 450,
+                        "confidence": 0.9,
+                        "sample_count": 8,
+                    },
+                    "ts": 100 + offset * 10,
+                })
+                ws.receive_json()
+            ws.send_json({
+                "type": "event",
+                "data": {
+                    "event_type": "gaze_fixation",
+                    "section_id": str(section_ids[1]),
+                    "rel_x": 0.5,
+                    "rel_y": 0.5,
+                    "duration_ms": 600,
+                    "confidence": 0.88,
+                },
+                "ts": 500,
+            })
+            ws.receive_json()
+            ws.send_json({
+                "type": "event",
+                "data": {"event_type": "gaze_lost", "duration_ms": 1200, "reason": "no_face"},
+                "ts": 1000,
+            })
+            ws.receive_json()
+
+        ended = client.post(
+            f"/sessions/{session_id}/end",
+            headers=auth_headers(student_token),
+        )
+        assert ended.status_code == 200, ended.text
+        return session_id
+
+    def test_researcher_reads_heatmap(
+        self,
+        client: TestClient,
+        educator: dict[str, Any],
+        student: dict[str, Any],
+        researcher: dict[str, Any],
+    ) -> None:
+        cls = make_class(client, educator["access_token"])
+        enroll_student(client, student["access_token"], cls["id"], cls["enrollment_code"])
+        material = make_material(client, educator["access_token"], cls["id"])
+        session_id = self._run_session_with_gaze(client, student["access_token"], material)
+
+        response = client.get(
+            f"/sessions/{session_id}/gaze-heatmap",
+            headers=auth_headers(researcher["access_token"]),
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["session_id"] == session_id
+        assert body["material_id"] == material["id"]
+        assert body["gaze_present"] is True
+        assert body["has_calibration"] is True
+        assert body["fixation_count"] == 6
+        assert body["attention_source"] == "gaze"
+        assert len(body["sections"]) >= 2
+        first = next(s for s in body["sections"] if s["fixation_count"] == 5)
+        assert len(first["fixations"]) == 5
+        assert all(0 <= f["rel_x"] <= 1 for f in first["fixations"])
+        assert body["lost_pct"] > 0
+
+    def test_owning_student_can_read(
+        self,
+        client: TestClient,
+        educator: dict[str, Any],
+        student: dict[str, Any],
+    ) -> None:
+        cls = make_class(client, educator["access_token"])
+        enroll_student(client, student["access_token"], cls["id"], cls["enrollment_code"])
+        material = make_material(client, educator["access_token"], cls["id"])
+        session_id = self._run_session_with_gaze(client, student["access_token"], material)
+
+        response = client.get(
+            f"/sessions/{session_id}/gaze-heatmap",
+            headers=auth_headers(student["access_token"]),
+        )
+        assert response.status_code == 200
+
+    def test_other_student_forbidden(
+        self,
+        client: TestClient,
+        educator: dict[str, Any],
+        student: dict[str, Any],
+        second_student: dict[str, Any],
+    ) -> None:
+        cls = make_class(client, educator["access_token"])
+        enroll_student(client, student["access_token"], cls["id"], cls["enrollment_code"])
+        material = make_material(client, educator["access_token"], cls["id"])
+        session_id = self._run_session_with_gaze(client, student["access_token"], material)
+
+        response = client.get(
+            f"/sessions/{session_id}/gaze-heatmap",
+            headers=auth_headers(second_student["access_token"]),
+        )
+        assert response.status_code == 403
+
+    def test_unknown_session_404(
+        self, client: TestClient, researcher: dict[str, Any]
+    ) -> None:
+        response = client.get(
+            "/sessions/99999/gaze-heatmap",
+            headers=auth_headers(researcher["access_token"]),
+        )
+        assert response.status_code == 404

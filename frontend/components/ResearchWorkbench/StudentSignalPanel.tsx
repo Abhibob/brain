@@ -30,6 +30,33 @@ function residualLabel(predicted: number | null | undefined, actual: number | nu
   return `${sign}${(residual * 100).toFixed(1)} pts`;
 }
 
+function gazeQuality(meta: {
+  gaze_present: boolean;
+  gaze_calibrated: boolean;
+  gaze_lost_pct: number;
+  has_session: boolean;
+} | undefined) {
+  if (!meta || !meta.has_session) {
+    return { label: "no session", detail: "no tracked session yet", tone: "muted" as const };
+  }
+  if (!meta.gaze_present) {
+    return { label: "none", detail: "heuristic signals only", tone: "muted" as const };
+  }
+  const lost = meta.gaze_lost_pct || 0;
+  if (lost > 0.25) {
+    return {
+      label: "has_loss",
+      detail: `${Math.round(lost * 100)}% looking away`,
+      tone: "warn" as const,
+    };
+  }
+  return {
+    label: meta.gaze_calibrated ? "calibrated" : "uncalibrated",
+    detail: meta.gaze_calibrated ? "9-point fit" : "raw gaze only",
+    tone: "good" as const,
+  };
+}
+
 function tribeStatusLabel(status: string | null | undefined): string {
   switch (status) {
     case "complete":
@@ -126,6 +153,18 @@ export function StudentSignalPanel({
             <strong>{tribeStatusLabel(tribe?.status)}</strong>
             <i>{tribeModelSubtext(tribe?.status, tribe?.prediction?.model_version)}</i>
           </div>
+          {(() => {
+            const q = gazeQuality(selectedStudent?.gaze_metadata);
+            const color =
+              q.tone === "good" ? "#2b9d55" : q.tone === "warn" ? "#a57400" : undefined;
+            return (
+              <div className="student-metric" title="Eye-tracking signal quality from the latest session">
+                <span>Gaze quality</span>
+                <strong style={color ? { color } : undefined}>{q.label}</strong>
+                <i>{q.detail}</i>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="student-feature-panel">

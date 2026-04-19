@@ -170,9 +170,52 @@ export type LearningView = {
     focus_score: number;
     focus_label: string;
     ended_at: string | null;
+    gaze_present?: boolean;
+    gaze_reading_time_s?: number;
   }>;
   narrative_notes: Array<{ note: string; ts: string }>;
 };
+
+// --- Eye tracking types (feature/eye-tracking) ---
+
+export type GazeFixationBin = {
+  rel_x: number;
+  rel_y: number;
+  weight: number;
+  confidence: number;
+};
+
+export type GazeHeatmapSection = {
+  section_id: string;
+  title: string;
+  order_index: number;
+  fixation_count: number;
+  time_s: number;
+  fixations: GazeFixationBin[];
+};
+
+export type GazeHeatmap = {
+  session_id: number;
+  material_id: number;
+  material_title: string;
+  started_at: string;
+  ended_at: string | null;
+  gaze_present: boolean;
+  has_calibration: boolean;
+  focus_score: number | null;
+  focus_label: string | null;
+  attention_source: "gaze" | "heuristic";
+  total_time_s: number;
+  reading_time_s: number;
+  off_content_time_s: number;
+  lost_pct: number;
+  entropy: number;
+  fixation_count: number;
+  fixation_ms_mean: number;
+  sections: GazeHeatmapSection[];
+};
+
+// --- Research workbench types (origin/main) ---
 
 export type ResearchWorkbench = {
   class: { id: number; title: string; description: string | null; created_at: string };
@@ -188,6 +231,12 @@ export type ResearchWorkbench = {
       student_sample_count: number;
       confidence?: number;
     };
+    gaze_metadata?: {
+      gaze_present: boolean;
+      gaze_calibrated: boolean;
+      gaze_lost_pct: number;
+      has_session: boolean;
+    };
   }>;
   materials: Array<{
     id: number;
@@ -196,6 +245,12 @@ export type ResearchWorkbench = {
     published_at: string | null;
     section_count: number;
     word_count: number;
+    gaze_stats?: {
+      total_sessions: number;
+      gaze_present_count: number;
+      gaze_present_pct: number;
+      avg_reading_time_s: number;
+    };
   }>;
   tribe_predictions: Array<{
     student_id: number;
@@ -512,5 +567,7 @@ export const api = {
         targetMaterialId !== undefined ? `?target_material_id=${targetMaterialId}` : ""
       }`,
       { method: "POST" }
-    )
+    ),
+  getSessionGazeHeatmap: (sessionId: number) =>
+    request<GazeHeatmap>(`/sessions/${sessionId}/gaze-heatmap`)
 };

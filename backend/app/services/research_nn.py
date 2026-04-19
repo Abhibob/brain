@@ -41,7 +41,18 @@ PROFILE_FEATURE_KEYS = [
     "fingerprint_skimmer",
 ]
 
-RESEARCH_FEATURE_KEYS = FEATURE_KEYS + PROFILE_FEATURE_KEYS
+# Eye-tracking signals become first-class inputs to the neural surrogate so
+# their saliency / gradients surface automatically in the NeuralMicroscope.
+# Sessions without gaze contribute zeros — the surrogate learns to rely on
+# other channels rather than failing.
+GAZE_FEATURE_KEYS = [
+    "gaze_reading_time_ratio",
+    "gaze_lost_pct",
+    "gaze_entropy",
+    "gaze_fixation_count_norm",
+]
+
+RESEARCH_FEATURE_KEYS = FEATURE_KEYS + PROFILE_FEATURE_KEYS + GAZE_FEATURE_KEYS
 ARCHITECTURE = {"input": len(RESEARCH_FEATURE_KEYS), "hidden": [10, 6], "output": 1, "activation": "relu/sigmoid"}
 LEARNING_RATE = 0.025
 EPOCHS = 180
@@ -87,6 +98,25 @@ async def _profile_for_student(db: AsyncSession, student_id: int) -> UserLearnin
     return await db.scalar(select(UserLearningProfile).where(UserLearningProfile.user_id == student_id))
 
 
+def _gaze_feature_values(session_features: dict[str, Any] | None) -> list[float]:
+    """Normalized gaze signals for the surrogate input layer.
+
+    Missing fields collapse to zero — so pre-gaze sessions still train
+    cleanly and the surrogate learns to down-weight these inputs when they
+    carry no information.
+    """
+    features = session_features or {}
+    total_time = max(float(features.get("total_time_s") or 0.0), 1.0)
+    reading_time = float(features.get("gaze_reading_time_s") or 0.0)
+    fixation_count = float(features.get("gaze_fixation_count") or 0.0)
+    return [
+        _clamp(reading_time / total_time),
+        _clamp(float(features.get("gaze_lost_pct") or 0.0)),
+        _clamp(float(features.get("gaze_entropy") or 0.0)),
+        _clamp(fixation_count / 50.0),
+    ]
+
+
 async def feature_vector_for_session(
     db: AsyncSession,
     session: TrackingSession | None,
@@ -94,8 +124,9 @@ async def feature_vector_for_session(
     student_id: int,
 ) -> list[float]:
     profile = await _profile_for_student(db, student_id)
-    base = flatten_features(session.features if session is not None else None)
-    return base + _profile_feature_values(profile)
+    session_features = session.features if session is not None else None
+    base = flatten_features(session_features)
+    return base + _profile_feature_values(profile) + _gaze_feature_values(session_features)
 
 
 async def _training_rows(db: AsyncSession, student_id: int, class_id: int | None) -> list[tuple[TrackingSession, QuizAttempt, bool]]:

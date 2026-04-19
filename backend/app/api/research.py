@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,11 +16,63 @@ from app.models import (
     PersonalizedLesson,
     ResearchNeuralModel,
     StudentProfileEntry,
+    TrackingSession,
     TribePrediction,
     User,
 )
 from app.services import research_nn, tribe
 from app.services.rag import retrieve_profile_entries
+
+
+def _student_gaze_metadata(session: TrackingSession | None) -> dict[str, Any]:
+    """Gaze signal quality for the latest session — nudges researchers to
+    know whether the student's surrogate was trained on gaze-augmented
+    samples before they interpret saliency."""
+    if session is None or not session.features:
+        return {
+            "gaze_present": False,
+            "gaze_calibrated": False,
+            "gaze_lost_pct": 0.0,
+            "has_session": session is not None,
+        }
+    features = session.features
+    return {
+        "gaze_present": bool(features.get("gaze_present")),
+        "gaze_calibrated": bool(features.get("gaze_has_calibration")),
+        "gaze_lost_pct": float(features.get("gaze_lost_pct") or 0.0),
+        "has_session": True,
+    }
+
+
+def _material_gaze_stats(
+    sessions_by_material: dict[int, list[TrackingSession]], material_id: int
+) -> dict[str, Any]:
+    """Aggregate gaze quality across every tracked session for a material.
+
+    Surfaced in cohort-level charts so researchers can spot materials where
+    eye tracking was broadly unavailable and adjust expectations."""
+    sessions = sessions_by_material.get(material_id, [])
+    total = len(sessions)
+    if total == 0:
+        return {
+            "total_sessions": 0,
+            "gaze_present_count": 0,
+            "gaze_present_pct": 0.0,
+            "avg_reading_time_s": 0.0,
+        }
+    present = 0
+    reading_sum = 0.0
+    for session in sessions:
+        features = session.features or {}
+        if features.get("gaze_present"):
+            present += 1
+        reading_sum += float(features.get("gaze_reading_time_s") or 0.0)
+    return {
+        "total_sessions": total,
+        "gaze_present_count": present,
+        "gaze_present_pct": present / total,
+        "avg_reading_time_s": reading_sum / total,
+    }
 
 router = APIRouter(prefix="/research", tags=["research"])
 
@@ -82,6 +136,21 @@ async def get_research_workbench(
     for row in tribe_rows:
         latest_tribe_by_pair.setdefault(f"{row.student_id}:{row.material_id}", row)
 
+    # Pull tracking sessions once and index them for gaze-quality aggregates.
+    session_rows = (
+        await db.scalars(
+            select(TrackingSession)
+            .join(Material, Material.id == TrackingSession.material_id)
+            .where(Material.class_id == class_id)
+            .order_by(TrackingSession.ended_at.desc().nullslast(), TrackingSession.id.desc())
+        )
+    ).all()
+    latest_session_by_student: dict[int, TrackingSession] = {}
+    sessions_by_material: dict[int, list[TrackingSession]] = {}
+    for session_row in session_rows:
+        latest_session_by_student.setdefault(session_row.student_id, session_row)
+        sessions_by_material.setdefault(session_row.material_id, []).append(session_row)
+
     return {
         "class": {
             "id": class_.id,
@@ -106,6 +175,7 @@ async def get_research_workbench(
                     if student.id in latest_model_by_student
                     else None
                 ),
+                "gaze_metadata": _student_gaze_metadata(latest_session_by_student.get(student.id)),
             }
             for student, entry_count in student_rows
         ],
@@ -117,6 +187,7 @@ async def get_research_workbench(
                 "published_at": material.published_at,
                 "section_count": len(material.sections),
                 "word_count": sum(section.word_count for section in material.sections),
+                "gaze_stats": _material_gaze_stats(sessions_by_material, material.id),
             }
             for material in materials
         ],

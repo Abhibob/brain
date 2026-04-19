@@ -381,8 +381,20 @@ async def build_learning_context(
     ]
 
     hints = (snapshot.get("behavioral_signals") or {}).get("recent_hints") or []
+    def _session_has_gaze(session: TrackingSession) -> bool:
+        features = session.features or {}
+        return bool(features.get("gaze_present"))
+
     recent_focus = [
-        {"label": s.focus_label, "score": s.focus_score, "material_id": s.material_id}
+        {
+            "focus_label": s.focus_label,
+            "focus_score": s.focus_score,
+            "material_id": s.material_id,
+            "session_id": s.id,
+            "ended_at": s.ended_at.isoformat() if s.ended_at else None,
+            "gaze_present": _session_has_gaze(s),
+            "gaze_reading_time_s": float((s.features or {}).get("gaze_reading_time_s") or 0.0),
+        }
         for s in recent_sessions
     ]
 

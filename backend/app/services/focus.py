@@ -50,6 +50,27 @@ def _attention_component(features: dict[str, Any]) -> float:
     return clamp(score)
 
 
+def _gaze_attention_component(features: dict[str, Any]) -> float | None:
+    """Return a gaze-derived attention score, or None when gaze data is absent.
+
+    Much stronger signal than the heuristic: reading_ratio is literally "time
+    the eyes were on content" divided by session duration.
+    """
+    if not features.get("gaze_present"):
+        return None
+    total_time = max(_numeric(features.get("total_time_s")), 1.0)
+    reading_time = _numeric(features.get("gaze_reading_time_s"))
+    lost_pct = _numeric(features.get("gaze_lost_pct"))
+    entropy = _numeric(features.get("gaze_entropy"))
+    reading_ratio = clamp(reading_time / total_time)
+    score = reading_ratio
+    score -= min(lost_pct * 1.25, 0.5)
+    # Scattered gaze (high entropy) indicates skimming/confusion — light penalty.
+    if entropy > 0.7:
+        score -= min((entropy - 0.7) * 0.6, 0.2)
+    return clamp(score)
+
+
 def _engagement_component(features: dict[str, Any]) -> float:
     hover_count = _numeric(features.get("hover_count"))
     selections = _numeric(features.get("text_selection_count"))
@@ -64,6 +85,15 @@ def _engagement_component(features: dict[str, Any]) -> float:
 def _label_for(score: float, features: dict[str, Any]) -> str:
     total_time = _numeric(features.get("total_time_s"))
     completion = _numeric(features.get("section_completion_rate"))
+    # When gaze is present, trust its loss/reading-ratio signals for sharper labels.
+    if features.get("gaze_present"):
+        lost_pct = _numeric(features.get("gaze_lost_pct"))
+        reading_time = _numeric(features.get("gaze_reading_time_s"))
+        reading_ratio = reading_time / max(total_time, 1.0)
+        if lost_pct >= 0.5 or (reading_ratio < 0.15 and total_time < 30):
+            return "abandoned"
+        if lost_pct >= 0.3:
+            return "distracted"
     if total_time < 8 or (completion < 0.15 and total_time < 30):
         return "abandoned"
     if score >= 0.78:
@@ -79,14 +109,21 @@ def compute_focus_score(features: dict[str, Any] | None) -> dict[str, Any]:
     features = features or {}
     pace = _pace_component(features)
     completion = _completion_component(features)
-    attention = _attention_component(features)
+    gaze_attn = _gaze_attention_component(features)
+    heuristic_attn = _attention_component(features)
+    attention = gaze_attn if gaze_attn is not None else heuristic_attn
     engagement = _engagement_component(features)
 
     focus = 0.25 * pace + 0.30 * completion + 0.30 * attention + 0.15 * engagement
     focus = round(clamp(focus), 4)
     total_time = _numeric(features.get("total_time_s"))
     sample_signal = clamp(total_time / 120)
-    confidence = round(clamp(0.3 + 0.5 * sample_signal + 0.2 * min(_numeric(features.get("hover_count")) / 10, 1.0)), 4)
+    base_confidence = 0.3 + 0.5 * sample_signal + 0.2 * min(_numeric(features.get("hover_count")) / 10, 1.0)
+    if features.get("gaze_present"):
+        # Gaze signal is much richer; boost confidence when it's available.
+        fix_count = _numeric(features.get("gaze_fixation_count"))
+        base_confidence += 0.2 * clamp(fix_count / 30)
+    confidence = round(clamp(base_confidence), 4)
     label = _label_for(focus, features)
     return {
         "focus_score": focus,
@@ -97,6 +134,7 @@ def compute_focus_score(features: dict[str, Any] | None) -> dict[str, Any]:
             "attention": round(attention, 4),
             "engagement": round(engagement, 4),
         },
+        "attention_source": "gaze" if gaze_attn is not None else "heuristic",
         "label": label,
     }
 

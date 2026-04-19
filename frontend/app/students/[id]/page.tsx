@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   api,
   clearAuth,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/api";
 import { FocusTimeline } from "@/components/LearningProfileView/FocusTimeline";
 import { LearningStyleNet } from "@/components/LearningProfileView/LearningStyleNet";
+import { GazeHeatmap } from "@/components/GazeHeatmap/GazeHeatmap";
 import { BrainModel, activationsForLesson } from "@/components/BrainModel/BrainModel";
 import TopBar from "@/components/ui/TopBar";
 
@@ -45,6 +46,7 @@ export default function StudentPage() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [entries, setEntries] = useState<ProfileEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
   useEffect(() => {
     const auth = getStoredAuth();
@@ -102,6 +104,23 @@ export default function StudentPage() {
       cancelled = true;
     };
   }, [router, studentId]);
+
+  const recentSessions = useMemo(() => {
+    const list = view?.recent_focus ?? [];
+    return [...list]
+      .filter((s) => typeof s.session_id === "number")
+      .sort((a, b) => {
+        const at = a.ended_at ? new Date(a.ended_at).getTime() : 0;
+        const bt = b.ended_at ? new Date(b.ended_at).getTime() : 0;
+        return bt - at;
+      });
+  }, [view]);
+
+  useEffect(() => {
+    if (selectedSessionId === null && recentSessions.length > 0) {
+      setSelectedSessionId(recentSessions[0].session_id);
+    }
+  }, [recentSessions, selectedSessionId]);
 
   if (signedIn === false) return null;
 
@@ -187,6 +206,51 @@ export default function StudentPage() {
             <FocusTimeline entries={view.recent_focus} />
           ) : (
             <p className="font-body text-on-surface-variant">Loading…</p>
+          )}
+        </section>
+
+        {/* Reading Heatmap */}
+        <section className="bg-surface-container-lowest rounded-[32px] p-8 border border-surface-dim/20">
+          {recentSessions.length === 0 ? (
+            <>
+              <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-3">
+                Reading heatmap
+              </div>
+              <p className="font-body text-on-surface-variant text-sm">
+                No tracked sessions yet. The heatmap will appear after a lesson is read with eye tracking enabled.
+              </p>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mr-auto">
+                  Reading heatmap
+                </div>
+                <label
+                  htmlFor="gaze-session-picker"
+                  className="font-body text-xs text-on-surface-variant"
+                >
+                  Session
+                </label>
+                <select
+                  id="gaze-session-picker"
+                  className="font-body text-sm px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-dim/40 text-on-surface"
+                  value={selectedSessionId ?? ""}
+                  onChange={(e) => setSelectedSessionId(Number(e.target.value))}
+                >
+                  {recentSessions.map((s) => (
+                    <option key={s.session_id} value={s.session_id}>
+                      #{s.session_id}
+                      {s.ended_at ? ` · ${new Date(s.ended_at).toLocaleString()}` : ""}
+                      {s.focus_label ? ` · ${s.focus_label}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {selectedSessionId !== null && (
+                <GazeHeatmap sessionId={selectedSessionId} />
+              )}
+            </div>
           )}
         </section>
 
