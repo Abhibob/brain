@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   api,
   clearAuth,
@@ -15,7 +15,7 @@ import { AssetPalette } from "@/components/LessonStudio/AssetPalette";
 import { PlanCanvas } from "@/components/LessonStudio/PlanCanvas";
 import { TopicInput } from "@/components/LessonStudio/TopicInput";
 
-export default function LessonStudioPage() {
+function LessonStudioContent() {
   const router = useRouter();
   const params = useSearchParams();
   const studentIdParam = params.get("student_id");
@@ -195,5 +195,13 @@ export default function LessonStudioPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function LessonStudioPage() {
+  return (
+    <Suspense fallback={<main className="main">Loading lesson studio...</main>}>
+      <LessonStudioContent />
+    </Suspense>
   );
 }

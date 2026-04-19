@@ -112,6 +112,19 @@ export default function ClassPage() {
 
         {auth?.user.role === "researcher" ? (
           <>
+            <section className="research-entry">
+              <div>
+                <div className="section-heading">Research workbench</div>
+                <h2>Mechanistic and neuro-response inspection</h2>
+                <p className="muted">
+                  Open the researcher-only workspace for personalized neural surrogates, backprop traces, content audits,
+                  and TRIBE v2 predicted fMRI views.
+                </p>
+              </div>
+              <Link className="button" href={`/research/classes/${classId}/workbench`}>
+                Open workbench
+              </Link>
+            </section>
             <section className="stack">
               <h2>Research dashboard</h2>
               {analytics?.students.length ? (
