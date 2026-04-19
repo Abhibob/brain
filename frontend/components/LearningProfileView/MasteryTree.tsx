@@ -235,14 +235,14 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
 
   return (
     <div
-      className="card"
+      className="bg-surface-container-lowest rounded-[32px] border border-surface-dim/20"
       style={{
         position: "relative",
         padding: 0,
         overflow: "hidden",
         minHeight: 420,
         background:
-          "radial-gradient(600px 400px at 40% 10%, var(--highlight-soft) 0%, transparent 70%), var(--surface)"
+          "radial-gradient(600px 400px at 40% 10%, rgba(192, 235, 228, 0.3) 0%, transparent 70%), #fbf9f5"
       }}
     >
       <div
@@ -262,7 +262,7 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
           <div className="section-heading" style={{ margin: 0 }}>
             Learning tree
           </div>
-          <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+          <div style={{ fontSize: 13, color: "#414847" }}>
             Drag to pan · scroll to zoom · click a leaf for details
           </div>
         </div>
@@ -289,8 +289,8 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
       >
         <defs>
           <radialGradient id="root-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--highlight)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="var(--highlight)" stopOpacity="0" />
+            <stop offset="0%" stopColor="#002d28" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#002d28" stopOpacity="0" />
           </radialGradient>
         </defs>
         <g transform={`translate(${pan.x + offsetX}, ${pan.y + 50}) scale(${zoom})`}>
@@ -303,7 +303,7 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
               <path
                 key={`coe-${i}`}
                 d={`M${from.x},${from.y} Q${(from.x + to.x) / 2},${Math.max(from.y, to.y) + 40} ${to.x},${to.y}`}
-                stroke="var(--highlight)"
+                stroke="#002d28"
                 strokeOpacity={0.18}
                 strokeWidth={Math.min(2 + edge.weight, 6)}
                 fill="none"
@@ -316,7 +316,7 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
               key={`te-${i}`}
               d={`M${from.x},${from.y + 16} C${from.x},${from.y + 36} ${to.x},${to.y - 36} ${to.x},${to.y - 16}`}
               fill="none"
-              stroke="var(--line-strong)"
+              stroke="#c0c8c6"
               strokeWidth={1.4}
             />
           ))}
@@ -329,8 +329,8 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
                     cx={node.x}
                     cy={node.y}
                     r={28}
-                    fill="var(--highlight)"
-                    stroke="var(--surface)"
+                    fill="#002d28"
+                    stroke="#fbf9f5"
                     strokeWidth={4}
                   />
                   <text
@@ -351,7 +351,7 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
                     x={node.x}
                     y={node.y - 48}
                     textAnchor="middle"
-                    fill="var(--ink)"
+                    fill="#1b1c1a"
                     fontSize={13}
                     fontWeight={600}
                   >
@@ -369,11 +369,11 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
                     width={120}
                     height={28}
                     rx={14}
-                    fill="var(--surface)"
-                    stroke="var(--line-strong)"
+                    fill="#fbf9f5"
+                    stroke="#c0c8c6"
                     strokeWidth={1}
                   />
-                  <text x={node.x} y={node.y + 4} textAnchor="middle" fill="var(--ink-soft)" fontSize={12}>
+                  <text x={node.x} y={node.y + 4} textAnchor="middle" fill="#414847" fontSize={12}>
                     {node.label}
                   </text>
                 </g>
@@ -409,7 +409,7 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
                   cy={node.y}
                   r={isHover ? size + 3 : size}
                   fill={fill}
-                  stroke="var(--surface)"
+                  stroke="#fbf9f5"
                   strokeWidth={3}
                   opacity={0.92}
                 />
@@ -418,7 +418,7 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
                   y={node.y + size + 14}
                   textAnchor="middle"
                   fontSize={11}
-                  fill="var(--ink)"
+                  fill="#1b1c1a"
                   style={{ pointerEvents: "none" }}
                 >
                   {data.topic.length > 22 ? data.topic.slice(0, 21) + "…" : data.topic}
@@ -436,10 +436,10 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
             bottom: 14,
             maxWidth: 320,
             padding: "12px 14px",
-            background: "var(--surface)",
-            border: "1px solid var(--line)",
-            borderRadius: "var(--radius-md)",
-            boxShadow: "var(--shadow-card)",
+            background: "#fbf9f5",
+            border: "1px solid #dbdad6",
+            borderRadius: "12px",
+            boxShadow: "0 10px 30px -12px rgba(27, 28, 26, 0.18)",
             zIndex: 3,
             pointerEvents: "none"
           }}
@@ -451,12 +451,12 @@ export function MasteryTree({ studentName, nodes, edges, onSelectTopic }: Props)
             <span className="chip">seen {hover.data.encounter_count}×</span>
           </div>
           {hover.data.struggle_signal > 0.5 && (
-            <div style={{ fontSize: 12, color: "var(--danger)" }}>
+            <div style={{ fontSize: 12, color: "#ba1a1a" }}>
               Struggle signal: {hover.data.struggle_signal.toFixed(2)}
             </div>
           )}
           {hover.data.strength_signal > 0.5 && (
-            <div style={{ fontSize: 12, color: "var(--success)" }}>
+            <div style={{ fontSize: 12, color: "#16a34a" }}>
               Strength signal: {hover.data.strength_signal.toFixed(2)}
             </div>
           )}
