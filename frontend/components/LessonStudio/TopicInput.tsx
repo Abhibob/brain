@@ -18,30 +18,38 @@ export function TopicInput({ onSubmit, busy }: Props) {
   }
 
   return (
-    <form className="stack" onSubmit={handle} style={{ gap: 10 }}>
-      <label className="field">
-        <span>Topic</span>
+    <form className="space-y-4" onSubmit={handle}>
+      <div className="space-y-2">
+        <label className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold">
+          Topic
+        </label>
         <input
-          className="input"
+          className="w-full bg-surface-container-low border-0 border-b-2 border-outline rounded-t-lg px-4 py-3 text-on-surface font-body focus:border-primary focus:outline-none transition-colors"
           placeholder="e.g. Pythagorean theorem"
           value={topic}
-          onChange={e => setTopic(e.target.value)}
+          onChange={(e) => setTopic(e.target.value)}
           disabled={busy}
           required
         />
-      </label>
-      <label className="field">
-        <span>What should this lesson do?</span>
+      </div>
+      <div className="space-y-2">
+        <label className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold">
+          What should this lesson do?
+        </label>
         <textarea
-          className="textarea"
+          className="w-full bg-surface-container-low border-0 border-b-2 border-outline rounded-t-lg px-4 py-3 text-on-surface font-body focus:border-primary focus:outline-none transition-colors min-h-[80px] resize-y"
           placeholder="one or two sentences about the goal or angle"
           value={description}
-          onChange={e => setDescription(e.target.value)}
+          onChange={(e) => setDescription(e.target.value)}
           disabled={busy}
           rows={3}
         />
-      </label>
-      <button className="button" type="submit" disabled={busy}>
+      </div>
+      <button
+        className="bg-primary hover:bg-primary-container text-on-primary font-body font-medium px-6 py-3 rounded-full transition-all duration-300 text-sm shadow-[0px_10px_20px_rgba(0,45,40,0.15)]"
+        type="submit"
+        disabled={busy}
+      >
         {busy ? "Generating..." : "Generate candidate assets"}
       </button>
     </form>

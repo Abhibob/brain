@@ -9,7 +9,7 @@ const AXES: Array<{ key: keyof StyleVector; label: string }> = [
   { key: "engagement_mode", label: "Engagement" },
   { key: "revisit_tendency", label: "Revisit" },
   { key: "visual_orientation", label: "Visual" },
-  { key: "motor_style", label: "Motor" }
+  { key: "motor_style", label: "Motor" },
 ];
 
 type Props = {
@@ -27,7 +27,7 @@ export function StyleRadar({ vector, size = 260 }: Props) {
     const angle = (Math.PI * 2 * axisIndex) / n - Math.PI / 2;
     return {
       x: center + Math.cos(angle) * radius * value,
-      y: center + Math.sin(angle) * radius * value
+      y: center + Math.sin(angle) * radius * value,
     };
   };
 
@@ -39,7 +39,7 @@ export function StyleRadar({ vector, size = 260 }: Props) {
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
-      {gridLevels.map(level => (
+      {gridLevels.map((level) => (
         <polygon
           key={level}
           points={AXES.map((_, index) => {
@@ -47,7 +47,7 @@ export function StyleRadar({ vector, size = 260 }: Props) {
             return `${p.x},${p.y}`;
           }).join(" ")}
           fill="none"
-          stroke="var(--line)"
+          stroke="#dbdad6"
           strokeWidth={1}
         />
       ))}
@@ -60,18 +60,18 @@ export function StyleRadar({ vector, size = 260 }: Props) {
             y1={center}
             x2={outer.x}
             y2={outer.y}
-            stroke="var(--line)"
+            stroke="#dbdad6"
             strokeWidth={0.5}
           />
         );
       })}
       <defs>
         <linearGradient id="radar-fill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="var(--highlight)" stopOpacity="0.35" />
+          <stop offset="0%" stopColor="#002d28" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#1a433e" stopOpacity="0.35" />
         </linearGradient>
       </defs>
-      <polygon points={polygon} fill="url(#radar-fill)" stroke="var(--highlight-strong)" strokeWidth={2} />
+      <polygon points={polygon} fill="url(#radar-fill)" stroke="#002d28" strokeWidth={2} />
       {AXES.map((axis, index) => {
         const p = point(index, 1.12);
         return (
@@ -82,7 +82,7 @@ export function StyleRadar({ vector, size = 260 }: Props) {
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize={11}
-            fill="var(--ink-soft)"
+            fill="#414847"
           >
             {axis.label}
           </text>

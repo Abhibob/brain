@@ -11,6 +11,10 @@ export default function HomePage() {
     router.replace(getStoredAuth() ? "/dashboard" : "/login");
   }, [router]);
 
-  return <main className="main">Loading EduTrack...</main>;
+  return (
+    <main className="min-h-screen bg-background flex items-center justify-center">
+      <p className="font-body text-on-surface-variant">Loading EduTrack...</p>
+    </main>
+  );
 }
 

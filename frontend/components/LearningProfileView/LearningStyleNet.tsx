@@ -79,11 +79,11 @@ function clamp01(x: number): number {
 }
 
 function colorForValue(v: number): string {
-  // Blend teal → indigo with value.
+  // Blend deep teal → warm brown with value.
   const vv = clamp01(v);
-  const r = Math.round(15 + (99 - 15) * vv);
-  const g = Math.round(118 + (102 - 118) * vv);
-  const b = Math.round(110 + (241 - 110) * vv);
+  const r = Math.round(0 + (62 - 0) * vv);
+  const g = Math.round(45 + (30 - 45) * vv);
+  const b = Math.round(40 + (18 - 40) * vv);
   return `rgb(${r}, ${g}, ${b})`;
 }
 
@@ -152,13 +152,7 @@ export function LearningStyleNet({ view }: Props) {
   if (!profile || !style) {
     return (
       <div
-        className="card"
-        style={{
-          minHeight: 320,
-          display: "grid",
-          placeItems: "center",
-          color: "var(--ink-soft)"
-        }}
+        className="bg-surface-container-lowest rounded-[32px] border border-surface-dim/20 min-h-[320px] grid place-items-center text-on-surface-variant font-body text-sm"
       >
         Learning-style signal appears here after the student completes a few lessons.
       </div>
@@ -187,14 +181,13 @@ export function LearningStyleNet({ view }: Props) {
 
   return (
     <div
-      className="card"
+      className="rounded-[32px] border border-surface-dim/20 overflow-hidden"
       style={{
         position: "relative",
         padding: 0,
-        overflow: "hidden",
         minHeight: 480,
         background:
-          "radial-gradient(560px 360px at 50% 50%, color-mix(in srgb, var(--highlight) 10%, transparent) 0%, transparent 70%), linear-gradient(135deg, #0b1020 0%, #1a1b3a 50%, #0f172a 100%)"
+          "radial-gradient(560px 360px at 50% 50%, rgba(0, 45, 40, 0.15) 0%, transparent 70%), linear-gradient(135deg, #002d28 0%, #1a433e 50%, #002d28 100%)"
       }}
     >
       <div
@@ -206,7 +199,7 @@ export function LearningStyleNet({ view }: Props) {
           display: "flex",
           justifyContent: "space-between",
           zIndex: 2,
-          color: "#c7d2fe"
+          color: "#a5cfc8"
         }}
       >
         <div>
@@ -215,7 +208,7 @@ export function LearningStyleNet({ view }: Props) {
               fontSize: 11,
               letterSpacing: "0.2em",
               textTransform: "uppercase",
-              color: "rgba(199, 210, 254, 0.7)"
+              color: "rgba(165, 207, 200, 0.7)"
             }}
           >
             Learning style
@@ -225,9 +218,9 @@ export function LearningStyleNet({ view }: Props) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 20, fontSize: 11, alignItems: "center" }}>
-          <LegendLabel color="rgba(165, 243, 252, 0.9)" label="Inputs" />
-          <LegendLabel color="rgba(224, 231, 255, 0.9)" label="Style axes" />
-          <LegendLabel color="rgba(251, 207, 232, 0.9)" label="Preferences" />
+          <LegendLabel color="rgba(192, 235, 228, 0.9)" label="Inputs" />
+          <LegendLabel color="rgba(165, 207, 200, 0.9)" label="Style axes" />
+          <LegendLabel color="rgba(242, 186, 167, 0.9)" label="Preferences" />
         </div>
       </div>
 
@@ -239,18 +232,18 @@ export function LearningStyleNet({ view }: Props) {
       >
         <defs>
           <linearGradient id="edge-flow" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.15" />
-            <stop offset="50%" stopColor="#818cf8" stopOpacity="0.85" />
-            <stop offset="100%" stopColor="#f472b6" stopOpacity="0.55" />
+            <stop offset="0%" stopColor="#c0ebe4" stopOpacity="0.15" />
+            <stop offset="50%" stopColor="#86afa8" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#f2baa7" stopOpacity="0.55" />
           </linearGradient>
           <linearGradient id="edge-active" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#a5f3fc" stopOpacity="0.9" />
-            <stop offset="50%" stopColor="#c4b5fd" stopOpacity="1" />
-            <stop offset="100%" stopColor="#fbcfe8" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="#c0ebe4" stopOpacity="0.9" />
+            <stop offset="50%" stopColor="#a5cfc8" stopOpacity="1" />
+            <stop offset="100%" stopColor="#f2baa7" stopOpacity="0.9" />
           </linearGradient>
           <radialGradient id="node-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#818cf8" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
+            <stop offset="0%" stopColor="#86afa8" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#86afa8" stopOpacity="0" />
           </radialGradient>
         </defs>
 

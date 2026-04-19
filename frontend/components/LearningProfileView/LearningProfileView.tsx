@@ -18,53 +18,75 @@ export function LearningProfileView({ view, selectedTopic, onSelectTopic }: Prop
   const hints = profile?.behavioral_signals?.recent_hints || [];
   const narrative = view.narrative_notes?.slice(-3).reverse() || [];
   const mastery = view.top_mastery.concat(
-    view.top_struggles.filter(s => !view.top_mastery.find(m => m.topic === s.topic))
+    view.top_struggles.filter((s) => !view.top_mastery.find((m) => m.topic === s.topic))
   );
 
   return (
-    <div className="stack" style={{ gap: 18 }}>
-      <section className="card">
-        <div className="section-heading">Learning style</div>
+    <div className="space-y-6">
+      <section className="bg-surface-container-lowest rounded-[32px] p-6 border border-surface-dim/20">
+        <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-4">
+          Learning style
+        </div>
         {profile ? (
-          <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 24, alignItems: "start" }}>
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 items-start">
             <StyleRadar vector={profile.style_vector} />
-            <div className="stack" style={{ gap: 10 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                <span className="chip chip--highlight">{profile.session_count} sessions</span>
-                <span className="chip">{profile.lesson_count} lessons</span>
-                <span className="chip">{profile.quiz_count} quizzes</span>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <span className="font-body text-xs font-semibold px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed">
+                  {profile.session_count} sessions
+                </span>
+                <span className="font-body text-xs font-semibold px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant">
+                  {profile.lesson_count} lessons
+                </span>
+                <span className="font-body text-xs font-semibold px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant">
+                  {profile.quiz_count} quizzes
+                </span>
                 {profile.last_focus_label && (
                   <span
-                    className="chip"
-                    style={{ background: "color-mix(in srgb, " + focusLabelColor(profile.last_focus_label) + " 18%, white)", color: focusLabelColor(profile.last_focus_label) }}
+                    className="font-body text-xs font-semibold px-3 py-1 rounded-full"
+                    style={{
+                      background: `color-mix(in srgb, ${focusLabelColor(profile.last_focus_label)} 18%, white)`,
+                      color: focusLabelColor(profile.last_focus_label),
+                    }}
                   >
                     last: {profile.last_focus_label}
                   </span>
                 )}
               </div>
-              <p style={{ margin: 0, color: "var(--ink-soft)" }}>
-                Rolling focus <strong style={{ color: "var(--ink)" }}>{profile.rolling_focus_score.toFixed(2)}</strong> ·
-                reading speed <strong style={{ color: "var(--ink)" }}>{Math.round(profile.rolling_reading_speed_wpm)} wpm</strong> ·
-                completion <strong style={{ color: "var(--ink)" }}>{(profile.rolling_completion_rate * 100).toFixed(0)}%</strong>
+              <p className="font-body text-sm text-on-surface-variant">
+                Rolling focus{" "}
+                <strong className="text-on-surface">{profile.rolling_focus_score.toFixed(2)}</strong>{" "}
+                · reading speed{" "}
+                <strong className="text-on-surface">
+                  {Math.round(profile.rolling_reading_speed_wpm)} wpm
+                </strong>{" "}
+                · completion{" "}
+                <strong className="text-on-surface">
+                  {(profile.rolling_completion_rate * 100).toFixed(0)}%
+                </strong>
               </p>
               {Object.keys(fingerprint).length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div className="flex flex-wrap gap-2">
                   {Object.entries(fingerprint)
                     .filter(([key]) => key !== "session_samples")
                     .filter(([, value]) => typeof value === "number" && value > 0.4)
                     .map(([key, value]) => (
-                      <span key={key} className="chip">
-                        {key.replace(/_/g, " ")} {typeof value === "number" ? `· ${value.toFixed(2)}` : ""}
+                      <span
+                        key={key}
+                        className="font-body text-xs font-semibold px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant"
+                      >
+                        {key.replace(/_/g, " ")}{" "}
+                        {typeof value === "number" ? `· ${value.toFixed(2)}` : ""}
                       </span>
                     ))}
                 </div>
               )}
               {hints.length > 0 && (
-                <div style={{ marginTop: 4 }}>
-                  <div className="section-heading" style={{ marginBottom: 4 }}>
+                <div className="mt-2">
+                  <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-2">
                     Recent teaching hints
                   </div>
-                  <ul style={{ paddingLeft: 18, margin: 0, color: "var(--ink-soft)", fontSize: 14 }}>
+                  <ul className="pl-4 space-y-1 text-sm text-on-surface-variant">
                     {hints.slice(-3).map((hint, i) => (
                       <li key={i}>{hint}</li>
                     ))}
@@ -74,29 +96,40 @@ export function LearningProfileView({ view, selectedTopic, onSelectTopic }: Prop
             </div>
           </div>
         ) : (
-          <p className="muted" style={{ margin: 0 }}>
+          <p className="font-body text-sm text-on-surface-variant">
             No learning profile yet. This student has not completed any tracked sessions.
           </p>
         )}
       </section>
 
-      <section className="card">
-        <div className="section-heading">Topic mastery</div>
-        <TopicGraph nodes={mastery} edges={view.topic_edges} onSelect={onSelectTopic} selected={selectedTopic ?? null} />
+      <section className="bg-surface-container-lowest rounded-[32px] p-6 border border-surface-dim/20">
+        <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-4">
+          Topic mastery
+        </div>
+        <TopicGraph
+          nodes={mastery}
+          edges={view.topic_edges}
+          onSelect={onSelectTopic}
+          selected={selectedTopic ?? null}
+        />
       </section>
 
-      <section className="card">
-        <div className="section-heading">Recent focus</div>
+      <section className="bg-surface-container-lowest rounded-[32px] p-6 border border-surface-dim/20">
+        <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-4">
+          Recent focus
+        </div>
         <FocusTimeline entries={view.recent_focus} />
       </section>
 
       {narrative.length > 0 && (
-        <section className="card">
-          <div className="section-heading">Narrative notes</div>
-          <ul style={{ paddingLeft: 18, margin: 0, color: "var(--ink)", fontSize: 14, lineHeight: 1.6 }}>
+        <section className="bg-surface-container-lowest rounded-[32px] p-6 border border-surface-dim/20">
+          <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-4">
+            Narrative notes
+          </div>
+          <ul className="pl-4 space-y-2 text-sm text-on-surface leading-relaxed">
             {narrative.map((entry, i) => (
-              <li key={i} style={{ marginBottom: 6 }}>
-                <span className="faint" style={{ fontSize: 12 }}>
+              <li key={i}>
+                <span className="font-body text-xs text-outline">
                   {new Date(entry.ts).toLocaleString()} ·{" "}
                 </span>
                 {entry.note}
@@ -119,62 +152,49 @@ export function CompactLearningProfileCard({ view }: CompactProps) {
   const hints = profile?.behavioral_signals?.recent_hints?.slice(-2) || [];
 
   return (
-    <section className="card" style={{ padding: 18 }}>
-      <div className="section-heading">Learning style</div>
+    <section className="bg-surface-container-lowest rounded-[32px] p-6 border border-surface-dim/20">
+      <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-4">
+        Learning style
+      </div>
       {profile ? (
         <>
-          <div style={{ display: "grid", placeItems: "center", marginTop: 6 }}>
+          <div className="flex justify-center mt-2">
             <StyleRadar vector={profile.style_vector} size={200} />
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 6,
-              margin: "10px 0",
-              justifyContent: "center"
-            }}
-          >
+          <div className="flex flex-wrap gap-2 my-3 justify-center">
             {profile.last_focus_label && (
               <span
-                className="chip"
+                className="font-body text-xs font-semibold px-3 py-1 rounded-full"
                 style={{
                   background: `color-mix(in srgb, ${focusLabelColor(profile.last_focus_label)} 18%, white)`,
-                  color: focusLabelColor(profile.last_focus_label)
+                  color: focusLabelColor(profile.last_focus_label),
                 }}
               >
                 {profile.last_focus_label}
               </span>
             )}
-            <span className="chip">
+            <span className="font-body text-xs font-semibold px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant">
               focus {profile.rolling_focus_score.toFixed(2)}
             </span>
-            <span className="chip">
+            <span className="font-body text-xs font-semibold px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant">
               {Math.round(profile.rolling_reading_speed_wpm)} wpm
             </span>
           </div>
           {topMastery.length > 0 && (
             <>
-              <div className="divider" />
-              <div className="section-heading">Top topics</div>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}>
-                {topMastery.map(node => (
-                  <li
-                    key={node.topic}
-                    style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}
-                  >
+              <div className="h-px bg-surface-dim my-4" />
+              <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-3">
+                Top topics
+              </div>
+              <ul className="space-y-2">
+                {topMastery.map((node) => (
+                  <li key={node.topic} className="flex items-center gap-3 text-sm">
                     <span
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        background: masteryColor(node.mastery_score)
-                      }}
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ background: masteryColor(node.mastery_score) }}
                     />
-                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {node.topic}
-                    </span>
-                    <span className="muted" style={{ fontSize: 12 }}>
+                    <span className="flex-1 truncate text-on-surface">{node.topic}</span>
+                    <span className="font-body text-xs text-on-surface-variant">
                       {(node.mastery_score * 10).toFixed(1)}/10
                     </span>
                   </li>
@@ -184,9 +204,11 @@ export function CompactLearningProfileCard({ view }: CompactProps) {
           )}
           {hints.length > 0 && (
             <>
-              <div className="divider" />
-              <div className="section-heading">Teaching hints</div>
-              <ul style={{ paddingLeft: 16, margin: 0, fontSize: 12, color: "var(--ink-soft)" }}>
+              <div className="h-px bg-surface-dim my-4" />
+              <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-2">
+                Teaching hints
+              </div>
+              <ul className="pl-4 space-y-1 text-xs text-on-surface-variant">
                 {hints.map((hint, i) => (
                   <li key={i}>{hint}</li>
                 ))}
@@ -195,7 +217,7 @@ export function CompactLearningProfileCard({ view }: CompactProps) {
           )}
         </>
       ) : (
-        <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+        <p className="font-body text-sm text-on-surface-variant">
           Student hasn't completed any tracked sessions yet — scores on the right use defaults.
         </p>
       )}

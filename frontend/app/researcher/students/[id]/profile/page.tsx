@@ -9,5 +9,5 @@ export default function LegacyResearcherProfileRedirect() {
   useEffect(() => {
     router.replace(`/students/${params.id}`);
   }, [params.id, router]);
-  return <main className="main">Redirecting…</main>;
+  return <main className="min-h-screen bg-background flex items-center justify-center"><p className="font-body text-on-surface-variant">Redirecting…</p></main>;
 }
