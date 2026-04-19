@@ -19,8 +19,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    asset_kind = sa.Enum("reading", "quiz", "video", "practice", name="lesson_asset_kind")
-    plan_status = sa.Enum("draft", "ready", "published", name="lesson_plan_status")
+    asset_kind = postgresql.ENUM("reading", "quiz", "video", "practice", name="lesson_asset_kind", create_type=False)
+    plan_status = postgresql.ENUM("draft", "ready", "published", name="lesson_plan_status", create_type=False)
     asset_kind.create(op.get_bind(), checkfirst=True)
     plan_status.create(op.get_bind(), checkfirst=True)
 

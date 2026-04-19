@@ -13,6 +13,7 @@ import {
 import { FocusTimeline } from "@/components/LearningProfileView/FocusTimeline";
 import { LearningStyleNet } from "@/components/LearningProfileView/LearningStyleNet";
 import { StyleRadar } from "@/components/LearningProfileView/StyleRadar";
+import { GazeHeatmap } from "@/components/GazeHeatmap/GazeHeatmap";
 import { focusLabelColor, masteryColor } from "@/lib/scores";
 
 function emailToName(email: string): string {
@@ -45,6 +46,7 @@ export default function StudentPage() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [entries, setEntries] = useState<ProfileEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
   useEffect(() => {
     const auth = getStoredAuth();
@@ -102,6 +104,23 @@ export default function StudentPage() {
       cancelled = true;
     };
   }, [router, studentId]);
+
+  const recentSessions = useMemo(() => {
+    const list = view?.recent_focus ?? [];
+    return [...list]
+      .filter((s) => typeof s.session_id === "number")
+      .sort((a, b) => {
+        const at = a.ended_at ? new Date(a.ended_at).getTime() : 0;
+        const bt = b.ended_at ? new Date(b.ended_at).getTime() : 0;
+        return bt - at;
+      });
+  }, [view]);
+
+  useEffect(() => {
+    if (selectedSessionId === null && recentSessions.length > 0) {
+      setSelectedSessionId(recentSessions[0].session_id);
+    }
+  }, [recentSessions, selectedSessionId]);
 
   const styleStats = useMemo(() => {
     const sv = view?.learning_profile?.style_vector;
@@ -266,6 +285,53 @@ export default function StudentPage() {
             <section className="card">
               <div className="section-heading">Recent focus</div>
               {view ? <FocusTimeline entries={view.recent_focus} /> : <p className="muted">Loading…</p>}
+            </section>
+
+            <section className="card" style={{ padding: 18 }}>
+              {recentSessions.length === 0 ? (
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="section-heading">Reading heatmap</div>
+                  <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+                    No tracked sessions yet. The heatmap will appear after a lesson is read with eye tracking enabled.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 14 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div className="section-heading" style={{ marginRight: "auto" }}>
+                      Reading heatmap
+                    </div>
+                    <label style={{ fontSize: 12, color: "var(--ink-soft)" }} htmlFor="gaze-session-picker">
+                      Session
+                    </label>
+                    <select
+                      id="gaze-session-picker"
+                      className="select"
+                      value={selectedSessionId ?? ""}
+                      onChange={(e) => setSelectedSessionId(Number(e.target.value))}
+                      style={{ padding: "6px 10px", fontSize: 12.5 }}
+                    >
+                      {recentSessions.map((s) => (
+                        <option key={s.session_id} value={s.session_id}>
+                          #{s.session_id}
+                          {s.ended_at ? ` · ${new Date(s.ended_at).toLocaleString()}` : ""}
+                          {s.focus_label ? ` · ${s.focus_label}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedSessionId !== null && (
+                    <GazeHeatmap sessionId={selectedSessionId} />
+                  )}
+                </div>
+              )}
             </section>
 
             <section className="card">

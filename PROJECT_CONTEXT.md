@@ -4,6 +4,8 @@ Generated from the current repository on 2026-04-18.
 
 This document is meant to give a frontend UI editor enough project context to safely redesign or extend the UI without breaking the backend contracts. It describes what the app does, how the backend works, what data exists, what each screen uses, and where the important code lives.
 
+> **Note (2026-04-18 update):** this context was written before the Lesson Studio, Learning Profile graph, focus scoring, and eye-tracking pipeline shipped. See `GAZE.md` for the eye-tracking contract (events, features, API, components). The Lesson Studio / Learning Profile sections of this doc are out of date — trust the code.
+
 ## 1. Product Summary
 
 EduTrack is a full-stack adaptive learning platform.

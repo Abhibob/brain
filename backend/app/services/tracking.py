@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.models import Material, SectionFocusScore, TrackingEvent, TrackingSession
 from app.redis import get_redis
 from app.services.focus import compute_focus_score, compute_section_focus
+from app.services.gaze import extract_gaze_features
 
 
 async def ingest_event(redis: Redis, session_id: int, event_type: str, data: dict[str, Any], client_ts: int) -> None:
@@ -138,6 +139,18 @@ def compute_features(events: list[dict[str, Any]], material: Material, started_a
         "reading_speed_wpm": round(total_words / section_time_minutes, 3) if total_words else 0.0,
         "section_completion_rate": round(min(completed_sections / section_count, 1.0), 3),
     }
+
+    gaze = extract_gaze_features(events, duration_s)
+    if gaze:
+        features.update(gaze)
+        # Gaze reading time is more accurate than IntersectionObserver time;
+        # prefer it where available so downstream signals see the true attention window.
+        gaze_per_section = gaze.get("gaze_time_per_section") or {}
+        if gaze_per_section:
+            for key, value in gaze_per_section.items():
+                if value and value > 0:
+                    features["time_per_section"][key] = round(float(value), 3)
+
     return features
 
 

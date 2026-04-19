@@ -5,12 +5,15 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_user, require_role
 from app.db import AsyncSessionLocal, get_db
 from app.models import Class, Enrollment, Material, ScorePrediction, SectionFocusScore, TrackingSession, User
 from app.redis import get_redis
 from app.schemas import (
+    GazeHeatmapOut,
+    GazeHeatmapSectionOut,
     SectionFocusOut,
     SessionEndOut,
     SessionFocusOut,
@@ -114,6 +117,75 @@ async def get_prediction(
         confidence=prediction.confidence,
         model_version=prediction.model_version,
         actual_score=prediction.actual_score,
+    )
+
+
+@router.get("/sessions/{session_id}/gaze-heatmap", response_model=GazeHeatmapOut)
+async def get_gaze_heatmap(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> GazeHeatmapOut:
+    session = await db.scalar(
+        select(TrackingSession)
+        .where(TrackingSession.id == session_id)
+        .options(
+            selectinload(TrackingSession.material).selectinload(Material.sections),
+            selectinload(TrackingSession.material).selectinload(Material.class_),
+        )
+    )
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    material = session.material
+    if current_user.role == "student":
+        if session.student_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your session")
+    elif current_user.role == "educator":
+        if material.class_.educator_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your class")
+    elif current_user.role != "researcher":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    features = session.features or {}
+    gaze_present = bool(features.get("gaze_present"))
+    heatmap = features.get("gaze_heatmap") or {}
+    time_per_section = features.get("gaze_time_per_section") or {}
+    fix_per_section = features.get("gaze_fixations_per_section") or {}
+
+    sections_payload: list[GazeHeatmapSectionOut] = []
+    for section in sorted(material.sections, key=lambda s: s.order_index):
+        sid = str(section.id)
+        sections_payload.append(
+            GazeHeatmapSectionOut(
+                section_id=sid,
+                title=section.title,
+                order_index=section.order_index,
+                fixation_count=int(fix_per_section.get(sid, 0) or 0),
+                time_s=float(time_per_section.get(sid, 0.0) or 0.0),
+                fixations=list(heatmap.get(sid, []) or []),
+            )
+        )
+
+    return GazeHeatmapOut(
+        session_id=session.id,
+        material_id=session.material_id,
+        material_title=material.title,
+        started_at=session.started_at,
+        ended_at=session.ended_at,
+        gaze_present=gaze_present,
+        has_calibration=bool(features.get("gaze_has_calibration")),
+        focus_score=session.focus_score,
+        focus_label=session.focus_label,
+        attention_source="gaze" if gaze_present else "heuristic",
+        total_time_s=float(features.get("total_time_s", 0.0) or 0.0),
+        reading_time_s=float(features.get("gaze_reading_time_s", 0.0) or 0.0),
+        off_content_time_s=float(features.get("gaze_off_content_time_s", 0.0) or 0.0),
+        lost_pct=float(features.get("gaze_lost_pct", 0.0) or 0.0),
+        entropy=float(features.get("gaze_entropy", 0.0) or 0.0),
+        fixation_count=int(features.get("gaze_fixation_count", 0) or 0),
+        fixation_ms_mean=float(features.get("gaze_fixation_ms_mean", 0.0) or 0.0),
+        sections=sections_payload,
     )
 
 
