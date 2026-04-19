@@ -104,45 +104,46 @@ export default function DashboardPage() {
             {/* Hero Bento Grid */}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch relative z-10">
               {/* Hero Content - Left 8 cols */}
-              <div className="lg:col-span-8 bg-surface-container-lowest rounded-[32px] p-10 md:p-16 relative overflow-hidden shadow-[0px_20px_40px_rgba(27,28,26,0.04)] border border-surface-dim/20 flex flex-col justify-center">
+              <div className="lg:col-span-8 bg-surface-container-lowest rounded-[32px] p-10 md:p-16 relative overflow-hidden shadow-[0px_20px_40px_rgba(27,28,26,0.04)] border border-surface-dim/20">
                 {/* Internal gradient */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/10 via-transparent to-surface-dim/10 pointer-events-none" />
-                {/* Hero image */}
-                <img
-                  alt="Stylized 3D Book and Brain"
-                  className="absolute right-4 bottom-4 w-80 lg:w-[26rem] h-auto object-contain mix-blend-multiply pointer-events-none z-0 opacity-90"
-                  src="/images/brain-book-hero.png"
-                />
-                <div className="relative z-10 max-w-xl">
-                  <h1 className="font-headline text-5xl md:text-6xl text-primary font-medium tracking-[-0.03em] leading-[1.05] mb-6">
-                    Design adaptive lessons.
-                  </h1>
-                  <p className="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 max-w-lg font-light">
-                    Orchestrate personalized learning pathways. Your neural repository intelligently
-                    adapts to cohort performance in real-time.
-                  </p>
-                  <div className="flex flex-wrap gap-4 items-center">
-                    <Link
-                      href="/educator/classes/new"
-                      className="bg-primary hover:bg-primary-container text-on-primary font-body font-medium px-8 py-4 rounded-full transition-all duration-300 shadow-[0px_10px_20px_rgba(0,45,40,0.15)] flex items-center gap-2 group"
-                    >
-                      Create class
-                      <MaterialIcon
-                        name="add"
-                        className="text-[18px] group-hover:translate-x-1 transition-transform"
-                      />
-                    </Link>
-                    <Link
-                      href="/educator/lesson-studio"
-                      className="bg-surface-container-high hover:bg-surface-dim text-on-surface font-body font-medium px-8 py-4 rounded-full transition-all duration-300 flex items-center gap-2 group"
-                    >
-                      Open lesson studio
-                      <MaterialIcon
-                        name="edit_note"
-                        className="text-[18px] text-on-surface-variant group-hover:text-primary transition-colors"
-                      />
-                    </Link>
+                <div className="relative z-10 flex flex-col md:flex-row gap-8 md:gap-10 items-center">
+                  <div className="flex-1 min-w-0 max-w-xl">
+                    <h1 className="font-headline text-5xl md:text-6xl text-primary font-medium tracking-[-0.03em] leading-[1.05] mb-6">
+                      Design adaptive lessons.
+                    </h1>
+                    <p className="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 font-light">
+                      Orchestrate personalized learning pathways. Your neural repository intelligently
+                      adapts to cohort performance in real-time.
+                    </p>
+                    <div className="flex flex-wrap gap-4 items-center">
+                      <Link
+                        href="/educator/classes/new"
+                        className="bg-primary hover:bg-primary-container text-on-primary font-body font-medium px-8 py-4 rounded-full transition-all duration-300 shadow-[0px_10px_20px_rgba(0,45,40,0.15)] flex items-center gap-2 group"
+                      >
+                        Create class
+                        <MaterialIcon
+                          name="add"
+                          className="text-[18px] group-hover:translate-x-1 transition-transform"
+                        />
+                      </Link>
+                      <Link
+                        href="/educator/lesson-studio"
+                        className="bg-surface-container-high hover:bg-surface-dim text-on-surface font-body font-medium px-8 py-4 rounded-full transition-all duration-300 flex items-center gap-2 group"
+                      >
+                        Open lesson studio
+                        <MaterialIcon
+                          name="edit_note"
+                          className="text-[18px] text-on-surface-variant group-hover:text-primary transition-colors"
+                        />
+                      </Link>
+                    </div>
                   </div>
+                  <img
+                    alt="Stylized 3D Book and Brain"
+                    className="w-64 md:w-72 lg:w-80 h-auto object-contain pointer-events-none shrink-0"
+                    src="/images/brain-book-hero.png"
+                  />
                 </div>
               </div>
 
