@@ -253,6 +253,52 @@ Frontend:
 - `frontend/components/GazeTracker/GazeCalibration.tsx` — 9-point calibration overlay
 - `frontend/components/GazeHeatmap/GazeHeatmap.tsx` — drop-in visualization
 
+## Research workbench integration (already wired)
+
+Gaze signals are pre-integrated into the research workbench so researchers
+see them without lifting a finger.
+
+**Neural surrogate input layer** (`services/research_nn.py`):
+- `RESEARCH_FEATURE_KEYS` now includes 4 normalized gaze inputs:
+  `gaze_reading_time_ratio`, `gaze_lost_pct`, `gaze_entropy`,
+  `gaze_fixation_count_norm`.
+- `feature_vector_for_session` appends `_gaze_feature_values(session.features)`
+  to every training row.
+- Sessions without gaze contribute zeros on those inputs — safe for mixed
+  cohorts. The surrogate learns to downweight them when information is
+  sparse.
+- **Consequence:** the NeuralMicroscope ranks gaze saliency alongside
+  mouse/scroll features automatically. When gaze matters for a student,
+  its node lights up in the input layer viz.
+
+**Workbench API** (`api/research.py::get_research_workbench`):
+- Each student entry now includes `gaze_metadata: {gaze_present,
+  gaze_calibrated, gaze_lost_pct, has_session}` from their latest session.
+- Each material entry now includes `gaze_stats: {total_sessions,
+  gaze_present_count, gaze_present_pct, avg_reading_time_s}` aggregated
+  across all sessions for that material.
+- Researchers can spot "this material's cohort has 20% gaze coverage" and
+  adjust interpretation.
+
+**StudentSignalPanel UI**:
+- New **Gaze quality** metric card: `calibrated` (green), `has_loss` (amber
+  if >25% face-lost), `none`, or `no session`. One glance tells the
+  researcher whether to trust gaze-derived saliency for the student.
+
+**CohortOverview material engagement chart**:
+- Dual-bar: completion % alongside gaze present %. Shows data-quality
+  distribution across the cohort.
+
+**What teammates can layer on top** (not built — signals exposed):
+- New endpoint joining `/sessions/{id}/gaze-heatmap` with the neural
+  microscope's saliency map for side-by-side "what the eyes saw vs what
+  the model thought mattered" validation.
+- Filter training rows by minimum gaze quality in a separate call path
+  (would need a new `research_nn` entry point).
+- Attention-aware TRIBE visualization: weight ROI time-series by
+  `gaze_reading_time_ratio` to separate "engaged looking" from "dwelling
+  but checked out".
+
 ## What this feature explicitly does NOT do
 
 (Flagging these so teammates know the scope boundary.)

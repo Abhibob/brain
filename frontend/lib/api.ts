@@ -231,6 +231,12 @@ export type ResearchWorkbench = {
       student_sample_count: number;
       confidence?: number;
     };
+    gaze_metadata?: {
+      gaze_present: boolean;
+      gaze_calibrated: boolean;
+      gaze_lost_pct: number;
+      has_session: boolean;
+    };
   }>;
   materials: Array<{
     id: number;
@@ -239,6 +245,12 @@ export type ResearchWorkbench = {
     published_at: string | null;
     section_count: number;
     word_count: number;
+    gaze_stats?: {
+      total_sessions: number;
+      gaze_present_count: number;
+      gaze_present_pct: number;
+      avg_reading_time_s: number;
+    };
   }>;
   tribe_predictions: Array<{
     student_id: number;
