@@ -199,9 +199,14 @@ def _asset_rows(topic: str, generated: list[tuple[str, dict[str, Any], str | Non
 
 
 async def _persist_assets(db: AsyncSession, assets: list[LessonAsset]) -> list[LessonAsset]:
+    # Only embed LLM-generated candidates (those might be retrieved by vector
+    # search later). Source-material assets are displayed in the builder and
+    # never searched, so we skip the expensive per-asset embedding call.
     for asset in assets:
-        embed_seed = f"{asset.topic}\n{asset.title}"
-        asset.embedding = await embed_text(embed_seed)
+        if asset.generated_by == "source":
+            asset.embedding = None
+        else:
+            asset.embedding = await embed_text(f"{asset.topic}\n{asset.title}")
         db.add(asset)
     await db.flush()
     return assets

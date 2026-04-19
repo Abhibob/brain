@@ -16,6 +16,7 @@ import { AssetPalette } from "@/components/LessonStudio/AssetPalette";
 import { AssetPreviewModal } from "@/components/LessonStudio/AssetPreviewModal";
 import { PlanCanvas } from "@/components/LessonStudio/PlanCanvas";
 import { CompactLearningProfileCard } from "@/components/LearningProfileView/LearningProfileView";
+import { BrainModel, activationsForLesson } from "@/components/BrainModel/BrainModel";
 import { fitTen } from "@/lib/scores";
 import TopBar from "@/components/ui/TopBar";
 import MaterialIcon from "@/components/ui/MaterialIcon";
@@ -279,6 +280,16 @@ export default function MaterialEditPage() {
                   Pick a student to start building.
                 </p>
               )
+            )}
+            {material && view && (
+              <BrainModel
+                activations={activationsForLesson(
+                  material.title,
+                  view.learning_profile?.rolling_focus_score ?? 0.6
+                )}
+                contextLabel={material.title}
+                heading="How this lesson engages the brain"
+              />
             )}
           </section>
 

@@ -25,14 +25,17 @@ export function QuizEngine({ materialId }: { materialId: number }) {
 
   return (
     <div className="space-y-6">
-      {questions.map((question) => (
-        <fieldset
+      {questions.map((question, index) => (
+        <div
           key={question.id}
           className="bg-surface-container-lowest rounded-[32px] p-8 border border-surface-dim/20"
         >
-          <legend className="font-headline text-xl text-primary font-medium mb-4">
+          <div className="font-body text-xs uppercase tracking-[0.05em] text-on-surface-variant font-semibold mb-2">
+            Question {index + 1}
+          </div>
+          <h3 className="font-headline text-xl text-primary font-medium mb-5 leading-snug">
             {question.question}
-          </legend>
+          </h3>
           <div className="space-y-3">
             {question.options.map((option) => (
               <label
@@ -57,7 +60,7 @@ export function QuizEngine({ materialId }: { materialId: number }) {
               </label>
             ))}
           </div>
-        </fieldset>
+        </div>
       ))}
 
       {error && (

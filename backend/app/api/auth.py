@@ -75,6 +75,43 @@ SEED_CLASS_TITLE = "Algebra I · Block 3"
 SEED_CLASS_CODE = "ALG2026A"
 SEED_LESSON_A_TITLE = "Introduction to the Pythagorean Theorem"
 SEED_LESSON_B_TITLE = "Solving One-Step Linear Equations"
+SEED_LESSON_C_TITLE = "Slope and Linear Graphs"
+SEED_LESSON_D_TITLE = "Systems of Linear Equations"
+
+# Additional "filler" classes the seed student is enrolled in so the dashboard
+# doesn't look empty. These have no materials on purpose — they're just stub rows.
+SEED_FILLER_CLASSES: list[dict[str, str]] = [
+    {
+        "title": "Biology 101",
+        "description": "Cells, genetics, and the rules that govern living systems. Fall lab block.",
+        "code": "BIO2026A",
+    },
+    {
+        "title": "World History · Period 2",
+        "description": "From the agricultural revolution to the modern era — emphasis on turning points.",
+        "code": "HIST2026B",
+    },
+    {
+        "title": "English Literature · Block 5",
+        "description": "Close reading of novels, short stories, and poetry. Weekly writing workshop.",
+        "code": "ENG2026E",
+    },
+    {
+        "title": "Introduction to Chemistry",
+        "description": "Atoms, bonds, stoichiometry. Includes a weekly lab notebook assignment.",
+        "code": "CHEM2026A",
+    },
+    {
+        "title": "Computer Science Foundations",
+        "description": "Variables, loops, functions, and problem decomposition — taught in Python.",
+        "code": "CS2026A",
+    },
+    {
+        "title": "Spanish II",
+        "description": "Builds on year-one basics: past tenses, conversational fluency, short essays.",
+        "code": "ESP2026B",
+    },
+]
 
 # Backwards-compatibility aliases — older tests import these names.
 DEMO_USERS = SEED_USERS
@@ -617,6 +654,502 @@ _LESSON_B_QUESTIONS = [
 ]
 
 
+_LESSON_C_SECTIONS = [
+    (
+        "Why slope matters",
+        """## The idea
+
+Every line on a graph has two things that describe it completely: where it crosses the vertical axis, and how
+steeply it goes up or down as you move to the right. The second of these — steepness — is what we call the
+**slope**. It shows up everywhere: the price of gas per gallon, the speed of a car, the growth of a savings
+account. Whenever a quantity changes at a steady rate, a linear graph is the right picture, and the slope is the
+one number that captures that rate.
+
+This lesson has three goals. First, be able to *read* slope from a graph without a ruler. Second, *compute*
+slope from two points with no confusion about which subtraction goes on top. Third, *interpret* a slope in plain
+words, because a number without units is not yet a useful answer.
+
+Before you jump to formulas, internalize the habit: before you compute, look. Linear graphs tell you their
+slope at a glance — up-and-to-the-right is positive, down-and-to-the-right is negative, flat is zero, and
+straight-up is undefined. If your computed slope disagrees with what the graph shows, the formula has the bug,
+not the picture.""",
+        0,
+    ),
+    (
+        "Slope as rise over run",
+        """## The ratio
+
+Slope is the ratio of vertical change to horizontal change — how much you go **up** for every step you take to
+the **right**. In symbols:
+
+> slope = rise / run = Δy / Δx
+
+The Greek capital delta (Δ) just means "change in." If you move from one point to another along a line, Δy is
+the change in the y-value, and Δx is the change in the x-value. The order matters: it is always change-in-y on
+top and change-in-x on the bottom, never the other way around.
+
+## A concrete count
+
+Pick two grid points on a line that land on lattice intersections. Starting at the left one:
+
+1. Count the squares you go up or down to reach the right point's height. That count (with sign) is the rise.
+2. Count the squares you move right to reach the right point's column. That count is the run.
+3. Divide rise by run. That's your slope.
+
+If the line goes down from left to right, the rise is negative. If the line is perfectly flat, the rise is zero
+and so is the slope. If the line is perfectly vertical, the run is zero — and division by zero is why the slope
+is *undefined* for vertical lines, not "infinite" as a casual word might suggest.""",
+        1,
+    ),
+    (
+        "Watch: slope, intercept, and the line",
+        "YT::2UrcUfBizyw::Khan Academy walks through slope and the slope-intercept form with three graph examples.",
+        2,
+    ),
+    (
+        "The formula from two points",
+        """## Two-point slope
+
+Most textbook problems give you two points on a line, written as (x₁, y₁) and (x₂, y₂). The slope is:
+
+> m = (y₂ − y₁) / (x₂ − x₁)
+
+The letter *m* for slope is traditional and you'll see it everywhere. The numerator is the rise; the denominator
+is the run. It doesn't matter which point you call "point 1" and which you call "point 2," as long as you are
+consistent — that is, if you subtract the point-A values from the point-B values in the numerator, you have to
+do the same order in the denominator.
+
+## Example
+
+Points (2, 3) and (5, 9). Slope:
+
+> m = (9 − 3) / (5 − 2) = 6 / 3 = **2**
+
+Check with the picture: from (2, 3) to (5, 9), you go up 6 and right 3 — 6/3 = 2. ✓
+
+Another: (−1, 4) and (3, −4).
+
+> m = (−4 − 4) / (3 − (−1)) = −8 / 4 = **−2**
+
+The slope is negative, which makes sense because the y-values dropped (4 → −4) as we moved right.""",
+        3,
+    ),
+    (
+        "Slope-intercept form",
+        """## The most common form
+
+If a line has slope *m* and crosses the y-axis at y = *b*, its equation can be written as:
+
+> y = m x + b
+
+This is **slope-intercept form**. The *m* is the slope; the *b* is the y-intercept — the y-value where the line
+crosses the vertical axis. Every linear equation can be rewritten in this form, and once it's there, you can
+read both key facts off the equation.
+
+## Reading it
+
+- **y = 3x + 2**: slope 3, y-intercept 2. Starts at (0, 2), rises 3 for every 1 to the right.
+- **y = −x + 5**: slope −1, y-intercept 5. Starts at (0, 5), drops 1 for every 1 to the right.
+- **y = (1/2)x**: slope 1/2, y-intercept 0. Passes through the origin, gentle climb.
+
+## Graphing from slope-intercept
+
+Two steps, every time:
+
+1. Plot the y-intercept: mark the point (0, b).
+2. Use the slope to get a second point: from (0, b), go *run* right and *rise* up (down if negative).
+
+That's it. Two points, draw a line through them, and extend it to the edges of your graph. With practice this
+should take under fifteen seconds.""",
+        4,
+    ),
+    (
+        "Interpreting slope in context",
+        """## Units and meaning
+
+A slope is never just a number; it always has units that match the axes. When you report a slope in a real-world
+problem, include the units or you have not finished the problem.
+
+## Example — a savings account
+
+A savings account starts at $200 and grows by $15 per week. On a graph with weeks on the x-axis and dollars on
+the y-axis, the line has y-intercept 200 and slope 15 **dollars per week**. The equation is:
+
+> y = 15x + 200
+
+The slope answers "how fast is the balance growing?" — $15 every week. The y-intercept answers "how much was
+there at week 0?" — $200.
+
+## Example — a road trip
+
+You leave home at time t = 0 and drive at 60 miles per hour. Distance from home on the y-axis, time on the
+x-axis. Slope = 60 mi/hr. Intercept = 0 (you start at home).
+
+## The interpretation habit
+
+For any linear graph, ask yourself three questions:
+
+1. What does an increase of 1 on the x-axis mean in the real world?
+2. What does the slope tell me about how fast y changes per unit of x?
+3. What does the y-intercept tell me about where y starts?
+
+If you can answer those in plain English, you've understood the line.""",
+        5,
+    ),
+    (
+        "Common mistakes with slope",
+        """## Mistake 1 — flipping rise and run
+
+Slope is rise over run, not run over rise. A line that goes up 1 and right 4 has slope 1/4, not 4. Memorize the
+picture: the number on top is "how much up," the number on bottom is "how much over."
+
+## Mistake 2 — inconsistent subtraction order
+
+Using (y₂ − y₁) on top but (x₁ − x₂) on bottom gives you the *wrong sign*. Either subtract second-minus-first
+in both, or first-minus-second in both.
+
+## Mistake 3 — confusing intercepts
+
+The y-intercept is where the line meets the **y-axis** (x = 0), not the x-axis. Students sometimes plug the
+x-intercept into slope-intercept form and wonder why their graph is wrong.
+
+## Mistake 4 — treating vertical lines as "slope = infinity"
+
+Vertical lines have slope **undefined**, not infinity. The distinction matters because "undefined" means "the
+formula does not apply here," not "a very large number."
+
+## Mistake 5 — forgetting the units
+
+A slope of "20" tells you nothing without units. Is it dollars per hour? Miles per minute? Always carry the units
+through the answer.""",
+        6,
+    ),
+    (
+        "Checkpoint before the quiz",
+        """## Quick recap
+
+- Slope = rise / run = Δy / Δx.
+- Two-point formula: m = (y₂ − y₁) / (x₂ − x₁). Be consistent with the subtraction order.
+- Slope-intercept form: y = m x + b, where b is the y-intercept and m is the slope.
+- Flat lines: slope 0. Vertical lines: slope undefined.
+- Always attach units to slope in a real-world problem.
+
+## Self-test
+
+Try these in your head before the quiz:
+
+- A line passes through (0, 3) and (4, 11). What is the slope?
+- A line has equation y = −2x + 7. Where does it cross the y-axis?
+- If a coffee shop's earnings rise $120 per day and it started at $0, write the equation.
+
+Answers: 2; (0, 7); y = 120x.
+
+## What's next
+
+The next lesson is **Systems of Linear Equations** — where two lines meet, how to find that point, and why the
+meeting point is the answer to many everyday questions. If you feel solid on slope, you're ready.""",
+        7,
+    ),
+]
+
+_LESSON_C_QUESTIONS = [
+    (
+        "What is the slope of a line through (1, 2) and (4, 11)?",
+        ["3", "1/3", "9", "−3"],
+        "3",
+    ),
+    (
+        "In y = −4x + 9, what is the y-intercept?",
+        ["−4", "4", "9", "−9"],
+        "9",
+    ),
+    (
+        "Which line is horizontal?",
+        ["y = 5", "x = 5", "y = 5x", "y = x + 5"],
+        "y = 5",
+    ),
+    (
+        "If a car's distance increases 55 miles per hour, what is the slope on a time-vs-distance graph?",
+        ["55 miles per hour", "55 hours per mile", "55 miles", "1/55"],
+        "55 miles per hour",
+    ),
+]
+
+
+_LESSON_D_SECTIONS = [
+    (
+        "What a system of equations is",
+        """## Two lines, one question
+
+A **system of linear equations** is a set of two or more linear equations that we want to solve at the same
+time. The solution is the (x, y) pair — or pairs — that makes every equation in the system true. Geometrically,
+each equation is a line on the plane, and the solution is the point (or points) where the lines meet.
+
+Why do we care? Because many real problems naturally split into two simultaneous conditions. "I have $20 and I
+bought apples at $2 each and bananas at $0.50 each, totaling 8 pieces of fruit — how many of each?" That's two
+equations: one for the total cost, one for the total number. The answer is the single (apples, bananas) pair
+that satisfies both at once.
+
+## Three possible outcomes
+
+Two lines on a plane can relate in exactly three ways:
+
+- They **cross once** — one unique solution, a single (x, y).
+- They are **parallel and distinct** — no solution; the system is *inconsistent*.
+- They are **the same line** (one is a multiple of the other) — infinite solutions; the system is *dependent*.
+
+Understanding which category your system falls into is half of solving it. The other half is finding the
+solution when it exists. This lesson covers the two standard methods: **substitution** and **elimination**.""",
+        0,
+    ),
+    (
+        "Method 1: substitution",
+        """## The core move
+
+Substitution works when one equation is already solved for a variable — or can be quickly rearranged to be.
+The plan is:
+
+1. Solve one equation for one variable (say, y).
+2. Substitute that expression into the *other* equation.
+3. Now you have one equation in one variable — solve it normally.
+4. Plug that value back into either original equation to find the other variable.
+
+## Worked example
+
+Solve:
+
+```
+y = 2x + 1
+3x + y = 11
+```
+
+The first equation is already solved for y. Substitute `2x + 1` into the second:
+
+```
+3x + (2x + 1) = 11
+5x + 1 = 11
+5x = 10
+x = 2
+```
+
+Plug x = 2 back into y = 2x + 1: y = 2·2 + 1 = **5**. So the solution is (2, 5).
+
+Check: does (2, 5) satisfy both equations? 5 = 2·2 + 1 ✓. And 3·2 + 5 = 11 ✓. Both hold, so we're done.""",
+        1,
+    ),
+    (
+        "Watch: solving systems step by step",
+        "YT::vA-55wZtLeE::Khan Academy walks through substitution and elimination with clear narration.",
+        2,
+    ),
+    (
+        "Method 2: elimination",
+        """## The core move
+
+Elimination works when the equations are in the form `Ax + By = C`. You add or subtract the equations to *cancel
+out* one variable, leaving a single-variable equation. Sometimes you first multiply one or both equations by a
+constant to make the coefficients line up.
+
+## Worked example — straight add
+
+Solve:
+
+```
+ 2x + 3y = 12
+−2x + 5y =  4
+```
+
+The x-coefficients are already opposites. Add the equations term by term:
+
+```
+(2x − 2x) + (3y + 5y) = 12 + 4
+0 + 8y = 16
+y = 2
+```
+
+Plug y = 2 back into either equation: 2x + 3·2 = 12 → 2x = 6 → x = **3**. Solution: (3, 2).
+
+## Worked example — scale first
+
+Solve:
+
+```
+3x + 4y = 18
+ x + 2y =  8
+```
+
+Multiply the second equation by −3 so the x-coefficients become opposites:
+
+```
+ 3x + 4y = 18
+−3x − 6y = −24
+```
+
+Add: `−2y = −6`, so y = **3**. Plug into x + 2y = 8: x = 8 − 6 = **2**. Solution: (2, 3).
+
+## Picking the method
+
+- Substitution is easy when one variable is already isolated.
+- Elimination is easy when both equations are in Ax + By = C form, especially if the coefficients line up.
+
+Both always give the same answer on a solvable system. Use whichever is less work.""",
+        3,
+    ),
+    (
+        "No solution and infinite solutions",
+        """## When the lines never meet
+
+If while solving you reach a statement like `0 = 5` (a false statement with no variables), the system has **no
+solution** — the lines are parallel. Example:
+
+```
+y = 2x + 1
+y = 2x − 3
+```
+
+Same slope, different intercepts → parallel, never cross.
+
+## When the lines are the same
+
+If you reach something like `0 = 0` (a true statement with no variables), the system has **infinite
+solutions** — the two equations describe the same line. Example:
+
+```
+ 2x + 4y =  6
+ x + 2y =  3
+```
+
+Multiply the second by 2: `2x + 4y = 6` — identical to the first. Any (x, y) on that line works.
+
+## The workflow
+
+While solving, if the variable disappears:
+
+- False statement → parallel lines, no solution.
+- True statement → same line, infinite solutions.
+
+If the variable *does not* disappear, you'll get a clean (x, y) and should check it.""",
+        4,
+    ),
+    (
+        "A word problem, start to finish",
+        """## Setup
+
+A coffee shop sells muffins for $3 and cookies for $2. On a slow afternoon they sell a total of 20 items and
+take in $52. How many of each did they sell?
+
+## Translate
+
+Let *m* = muffins and *c* = cookies. The conditions become two equations:
+
+```
+m + c = 20      (total items)
+3m + 2c = 52    (total revenue)
+```
+
+## Solve
+
+This is a perfect fit for elimination. Multiply the first equation by −2:
+
+```
+−2m − 2c = −40
+ 3m + 2c =  52
+```
+
+Add: `m = 12`. So they sold **12 muffins**. Plug back into the first equation: `12 + c = 20`, so
+`c = 8`. **8 cookies.**
+
+## Check
+
+12 + 8 = 20 items ✓. 3·12 + 2·8 = 36 + 16 = 52 dollars ✓. Both hold — the answer is right.
+
+## The takeaway
+
+Word problems become systems whenever you have two unknowns and two independent conditions. Nearly every
+mixture, rate, or age problem in the textbook follows this pattern.""",
+        5,
+    ),
+    (
+        "Common mistakes with systems",
+        """## Mistake 1 — sloppy substitution
+
+When substituting an expression for a variable, wrap it in parentheses before plugging in. `3x + (2x + 1)`
+carries the +1 correctly. `3x + 2x + 1` happens to work here, but in `3x − (2x + 1)`, dropping the parentheses
+flips your sign error waiting to happen.
+
+## Mistake 2 — multiplying only part of an equation
+
+When you scale an equation, you must scale *every* term. Going from `x + 2y = 8` to `3x + 2y = 24` is wrong; the
+correct scaling is `3x + 6y = 24`.
+
+## Mistake 3 — only checking one equation
+
+A solution has to satisfy *both* equations. Plug it into the one you didn't use to isolate the variable — that's
+often where an arithmetic slip shows up.
+
+## Mistake 4 — confusing "no solution" with "zero"
+
+If you end up with `0 = 0`, the answer is **infinite solutions**, not "x = 0" and not "no solution." If you end
+up with `0 = 5`, the answer is **no solution** — a statement about the system, not a value of x.
+
+## Mistake 5 — forgetting to find both variables
+
+Finding x = 3 is half the problem. The solution is an (x, y) pair, so always plug back in to find y (or vice
+versa) before you call it done.""",
+        6,
+    ),
+    (
+        "Checkpoint before the quiz",
+        """## Quick recap
+
+- A system of linear equations asks for the (x, y) pair that satisfies all the equations simultaneously.
+- **Substitution**: isolate one variable, plug into the other equation.
+- **Elimination**: add or subtract equations (after scaling if needed) to cancel a variable.
+- `0 = 5` means no solution (parallel lines). `0 = 0` means infinite solutions (same line).
+- Always check your answer in *both* equations.
+
+## Self-test
+
+Without looking back, work these:
+
+- Solve: y = x + 1 and y = 2x − 1.
+- Solve: 2x + y = 7 and x − y = 2.
+- Without solving, how many solutions does y = 3x + 4 and y = 3x − 7 have?
+
+Answers: (2, 3); (3, 1); none (parallel).
+
+## What's next
+
+The next lesson covers **polynomial basics** — multiplying and factoring small polynomials. Systems of equations
+will come back when we start graphing parabolas, so the intuition you built here carries forward.""",
+        7,
+    ),
+]
+
+_LESSON_D_QUESTIONS = [
+    (
+        "Solve the system: y = x + 2 and y = 2x − 1.",
+        ["(3, 5)", "(1, 3)", "(2, 4)", "(0, 2)"],
+        "(3, 5)",
+    ),
+    (
+        "While solving a system you reach 0 = 7. What does this mean?",
+        ["Infinite solutions", "The solution is zero", "No solution (parallel lines)", "You divided by zero"],
+        "No solution (parallel lines)",
+    ),
+    (
+        "Which method works best when one equation is y = something in terms of x?",
+        ["Substitution", "Elimination", "Graphing only", "Guess and check"],
+        "Substitution",
+    ),
+    (
+        "For the system 2x + y = 6 and x − y = 0, what is x?",
+        ["2", "3", "4", "6"],
+        "2",
+    ),
+]
+
+
 async def _ensure_seed_lesson(
     db: AsyncSession,
     *,
@@ -704,6 +1237,44 @@ async def _ensure_demo_world(db: AsyncSession) -> None:
         sections=_LESSON_B_SECTIONS,
         questions=_LESSON_B_QUESTIONS,
     )
+    await _ensure_seed_lesson(
+        db,
+        class_id=cls.id,
+        title=SEED_LESSON_C_TITLE,
+        order_index=2,
+        sections=_LESSON_C_SECTIONS,
+        questions=_LESSON_C_QUESTIONS,
+    )
+    await _ensure_seed_lesson(
+        db,
+        class_id=cls.id,
+        title=SEED_LESSON_D_TITLE,
+        order_index=3,
+        sections=_LESSON_D_SECTIONS,
+        questions=_LESSON_D_QUESTIONS,
+    )
+
+    # Filler classes — no materials, student is pre-enrolled so the dashboard
+    # has real texture instead of a single card.
+    for spec in SEED_FILLER_CLASSES:
+        filler = await db.scalar(select(Class).where(Class.enrollment_code == spec["code"]))
+        if filler is None:
+            filler = Class(
+                educator_id=educator.id,
+                title=spec["title"],
+                description=spec["description"],
+                enrollment_code=spec["code"],
+            )
+            db.add(filler)
+            await db.flush()
+        already_enrolled = await db.scalar(
+            select(Enrollment.id).where(
+                Enrollment.class_id == filler.id, Enrollment.student_id == student.id
+            )
+        )
+        if not already_enrolled:
+            db.add(Enrollment(class_id=filler.id, student_id=student.id))
+
     await db.commit()
     await _ensure_seed_student_activity(db, student_id=student.id, class_id=cls.id)
 
@@ -714,44 +1285,78 @@ async def _ensure_demo_world(db: AsyncSession) -> None:
 # ------------------------------------------------------------------
 
 
-def _seed_features(*, focused: bool, word_count: int) -> dict:
-    """Plausible feature dict for a single seeded session."""
-    if focused:
-        return {
-            "total_time_s": 240,
-            "time_per_section": {},
-            "hover_count": 5,
-            "avg_hover_duration_ms": 900,
-            "hover_per_section": {},
-            "scroll_depth_pct": 95,
-            "back_scroll_count": 2,
-            "scroll_velocity_avg": 0.4,
-            "mouse_velocity_avg": 0.3,
-            "mouse_velocity_variance": 4.5,
-            "idle_total_s": 6,
-            "idle_count": 1,
-            "text_selection_count": 3,
-            "re_read_sections": ["1"],
-            "reading_speed_wpm": 190,
-            "section_completion_rate": 1.0,
-        }
+_SEED_FEATURE_PROFILES: dict[str, dict] = {
+    # Lesson A — geometry/pythagorean: lots of hovering and diagram gazing
+    "A_focused": {
+        "total_time_s": 260, "hover_count": 7, "avg_hover_duration_ms": 1100,
+        "scroll_depth_pct": 98, "back_scroll_count": 3, "scroll_velocity_avg": 0.35,
+        "mouse_velocity_avg": 0.28, "mouse_velocity_variance": 4.0,
+        "idle_total_s": 6, "idle_count": 1, "text_selection_count": 4,
+        "re_read_sections": ["1", "3"], "reading_speed_wpm": 175, "section_completion_rate": 1.0,
+    },
+    "A_loose": {
+        "total_time_s": 140, "hover_count": 2, "avg_hover_duration_ms": 380,
+        "scroll_depth_pct": 62, "back_scroll_count": 9, "scroll_velocity_avg": 1.5,
+        "mouse_velocity_avg": 2.4, "mouse_velocity_variance": 210,
+        "idle_total_s": 58, "idle_count": 4, "text_selection_count": 0,
+        "re_read_sections": [], "reading_speed_wpm": 115, "section_completion_rate": 0.5,
+    },
+    # Lesson B — solving equations: reads faster, fewer hovers, more selections
+    "B_focused": {
+        "total_time_s": 210, "hover_count": 3, "avg_hover_duration_ms": 600,
+        "scroll_depth_pct": 96, "back_scroll_count": 2, "scroll_velocity_avg": 0.5,
+        "mouse_velocity_avg": 0.35, "mouse_velocity_variance": 6.0,
+        "idle_total_s": 8, "idle_count": 1, "text_selection_count": 6,
+        "re_read_sections": ["0"], "reading_speed_wpm": 215, "section_completion_rate": 1.0,
+    },
+    "B_loose": {
+        "total_time_s": 120, "hover_count": 1, "avg_hover_duration_ms": 220,
+        "scroll_depth_pct": 55, "back_scroll_count": 6, "scroll_velocity_avg": 1.2,
+        "mouse_velocity_avg": 1.8, "mouse_velocity_variance": 160,
+        "idle_total_s": 42, "idle_count": 3, "text_selection_count": 0,
+        "re_read_sections": [], "reading_speed_wpm": 145, "section_completion_rate": 0.6,
+    },
+    # Lesson C — slope & graphs: heavy visual focus, lots of scroll activity
+    "C_focused": {
+        "total_time_s": 280, "hover_count": 9, "avg_hover_duration_ms": 1350,
+        "scroll_depth_pct": 99, "back_scroll_count": 5, "scroll_velocity_avg": 0.6,
+        "mouse_velocity_avg": 0.45, "mouse_velocity_variance": 9.0,
+        "idle_total_s": 5, "idle_count": 1, "text_selection_count": 2,
+        "re_read_sections": ["2"], "reading_speed_wpm": 165, "section_completion_rate": 1.0,
+    },
+    "C_loose": {
+        "total_time_s": 170, "hover_count": 3, "avg_hover_duration_ms": 520,
+        "scroll_depth_pct": 68, "back_scroll_count": 11, "scroll_velocity_avg": 1.1,
+        "mouse_velocity_avg": 1.6, "mouse_velocity_variance": 140,
+        "idle_total_s": 38, "idle_count": 3, "text_selection_count": 1,
+        "re_read_sections": [], "reading_speed_wpm": 135, "section_completion_rate": 0.7,
+    },
+    # Lesson D — systems of equations: longer sessions, more re-reads
+    "D_focused": {
+        "total_time_s": 320, "hover_count": 5, "avg_hover_duration_ms": 780,
+        "scroll_depth_pct": 97, "back_scroll_count": 6, "scroll_velocity_avg": 0.5,
+        "mouse_velocity_avg": 0.4, "mouse_velocity_variance": 7.5,
+        "idle_total_s": 10, "idle_count": 1, "text_selection_count": 4,
+        "re_read_sections": ["1", "2"], "reading_speed_wpm": 155, "section_completion_rate": 1.0,
+    },
+    "D_loose": {
+        "total_time_s": 180, "hover_count": 2, "avg_hover_duration_ms": 420,
+        "scroll_depth_pct": 70, "back_scroll_count": 14, "scroll_velocity_avg": 1.0,
+        "mouse_velocity_avg": 1.9, "mouse_velocity_variance": 190,
+        "idle_total_s": 48, "idle_count": 3, "text_selection_count": 0,
+        "re_read_sections": [], "reading_speed_wpm": 125, "section_completion_rate": 0.65,
+    },
+}
+
+
+def _seed_features(*, focused: bool, word_count: int, tag: str = "A") -> dict:
+    """Per-lesson plausible feature dict. Tags: A/B/C/D map to the 4 algebra lessons."""
+    key = f"{tag}_{'focused' if focused else 'loose'}"
+    template = _SEED_FEATURE_PROFILES.get(key) or _SEED_FEATURE_PROFILES["A_focused"]
     return {
-        "total_time_s": 150,
         "time_per_section": {},
-        "hover_count": 1,
-        "avg_hover_duration_ms": 300,
         "hover_per_section": {},
-        "scroll_depth_pct": 60,
-        "back_scroll_count": 8,
-        "scroll_velocity_avg": 1.4,
-        "mouse_velocity_avg": 2.1,
-        "mouse_velocity_variance": 180,
-        "idle_total_s": 55,
-        "idle_count": 3,
-        "text_selection_count": 0,
-        "re_read_sections": [],
-        "reading_speed_wpm": 110,
-        "section_completion_rate": 0.55,
+        **template,
     }
 
 
@@ -781,19 +1386,26 @@ async def _ensure_seed_student_activity(db: AsyncSession, *, student_id: int, cl
         return
 
     now = datetime.now(UTC)
-    # Pattern: two sessions per lesson (a focused then a shakier one), ordered so the
-    # most recent sits at the end. This produces a realistic learning arc.
+    # Cover all four algebra lessons with distinct feature profiles so the
+    # researcher workbench renders noticeably different telemetry per lesson.
     pattern = [
-        ("A", True, 5),  # lesson A, focused, 5 days ago
-        ("B", False, 4),
-        ("A", False, 3),
-        ("B", True, 2),
-        ("A", True, 1),
+        ("A", True, 10),   # lesson A — 10 days ago, focused
+        ("A", False, 9),   # lesson A — shakier revisit
+        ("B", False, 7),   # lesson B — distracted first pass
+        ("B", True, 6),    # lesson B — second pass clean
+        ("C", False, 4),   # lesson C — first pass loose
+        ("C", True, 3),    # lesson C — focused rerun
+        ("D", False, 2),   # lesson D — first pass shakier
+        ("D", True, 1),    # lesson D — focused, most recent
     ]
-    lesson_by_tag = {"A": materials[0], "B": materials[1] if len(materials) > 1 else materials[0]}
+    lesson_by_tag: dict[str, Material] = {}
+    for i, tag in enumerate(["A", "B", "C", "D"]):
+        if i < len(materials):
+            lesson_by_tag[tag] = materials[i]
+        else:
+            lesson_by_tag[tag] = materials[-1]
 
-    # Quiz scores for each session, hand-tuned so mastery drifts up over time.
-    score_pattern = [0.75, 0.5, 0.6, 0.8, 0.9]
+    score_pattern = [0.62, 0.55, 0.58, 0.72, 0.65, 0.82, 0.74, 0.88]
 
     for index, (tag, focused, days_ago) in enumerate(pattern):
         material = lesson_by_tag[tag]
@@ -803,7 +1415,7 @@ async def _ensure_seed_student_activity(db: AsyncSession, *, student_id: int, cl
 
         started = now - timedelta(days=days_ago, minutes=5)
         ended = started + timedelta(minutes=5 if focused else 3)
-        features = _seed_features(focused=focused, word_count=word_count)
+        features = _seed_features(focused=focused, word_count=word_count, tag=tag)
         focus = compute_focus_score(features)
 
         session = TrackingSession(
