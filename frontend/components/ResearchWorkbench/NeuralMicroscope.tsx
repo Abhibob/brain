@@ -38,6 +38,7 @@ function heatColor(value: number, maxAbs: number) {
 }
 
 function compact(value: number) {
+  if (value === 0) return "0.000";
   if (Math.abs(value) >= 0.01) return value.toFixed(3);
   return value.toExponential(1);
 }
@@ -54,13 +55,26 @@ function LossHeatmap({ history }: { history: Array<{ epoch: number; loss: number
   return (
     <div className="loss-heatmap">
       <div className="loss-heatmap__cells" aria-label="Epoch loss heatmap">
-        {history.map(item => (
-          <span
-            key={item.epoch}
-            title={`epoch ${item.epoch}: loss ${item.loss}`}
-            style={{ background: `rgba(37, 99, 235, ${0.1 + (item.loss / maxLoss) * 0.72})` }}
-          />
-        ))}
+        {history.map(item => {
+          const ratio = item.loss / maxLoss;
+          return (
+            <span
+              key={item.epoch}
+              title={`epoch ${item.epoch}: loss ${item.loss}`}
+              style={{
+                background: `rgba(37, 99, 235, ${0.1 + ratio * 0.72})`,
+                color: ratio > 0.55 ? "#fff" : "#1f2a25",
+                fontSize: 9,
+                lineHeight: 1,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {compact(item.loss)}
+            </span>
+          );
+        })}
       </div>
       <div className="loss-heatmap__meta">
         <span>epoch {history[0].epoch}</span>
@@ -126,10 +140,17 @@ function MatrixHeatmap({
                   }`}
                   key={`${row}-${column}`}
                   title={`${row} -> ${column}: ${value}`}
-                  style={{ background: heatColor(value, maxAbs) }}
+                  style={{
+                    background: heatColor(value, maxAbs),
+                    fontSize: 9,
+                    fontWeight: Math.abs(value) === maxAbs ? 700 : 500,
+                    lineHeight: 1,
+                    padding: "2px 1px",
+                    color: Math.abs(value) / Math.max(maxAbs, 1e-7) > 0.55 ? "#fff" : "#1f2a25",
+                  }}
                   onClick={() => onSelect({ layerId, layerLabel, mode, row, column, value, implication })}
                 >
-                  {Math.abs(value) === maxAbs ? compact(value) : ""}
+                  {compact(value)}
                 </button>
               );
             })}

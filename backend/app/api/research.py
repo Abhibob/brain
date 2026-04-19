@@ -317,6 +317,10 @@ async def get_tribe_prediction(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material not found")
     await _require_student_in_class(db, student_id, material.class_id)
     prediction = await tribe.get_latest_prediction(db, student_id=student_id, material_id=material_id)
+    if prediction is None or not prediction.roi_timeseries:
+        # Fall back to a deterministic demo payload so the researcher view shows
+        # per-lesson content even without a live TRIBE v2 deployment.
+        prediction = tribe.demo_prediction(material, student_id)
     return tribe.prediction_payload(prediction)
 
 
@@ -327,6 +331,15 @@ async def run_tribe_prediction(
     _researcher: User = Depends(require_role("researcher")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    settings_snapshot = tribe.get_settings()
+    if not settings_snapshot.tribe_v2_enabled or not settings_snapshot.tribe_v2_base_url:
+        # Without a real TRIBE v2 endpoint, synthesize a demo prediction in place so
+        # the "Run" button still produces lesson-varied output.
+        material = await db.scalar(select(Material).where(Material.id == material_id))
+        if material is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material not found")
+        await _require_student_in_class(db, student_id, material.class_id)
+        return tribe.prediction_payload(tribe.demo_prediction(material, student_id))
     try:
         prediction = await tribe.run_prediction(db, student_id=student_id, material_id=material_id)
     except ValueError as exc:

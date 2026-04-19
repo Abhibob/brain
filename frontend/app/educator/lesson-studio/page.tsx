@@ -11,7 +11,7 @@ import {
   LearningView,
   LessonPlanDraft,
 } from "@/lib/api";
-import { LearningProfileView } from "@/components/LearningProfileView/LearningProfileView";
+import { CompactLearningProfileCard } from "@/components/LearningProfileView/LearningProfileView";
 import { AssetPalette } from "@/components/LessonStudio/AssetPalette";
 import { PlanCanvas } from "@/components/LessonStudio/PlanCanvas";
 import { TopicInput } from "@/components/LessonStudio/TopicInput";
@@ -317,11 +317,7 @@ function LessonStudioContent() {
 
               {/* Learning profile */}
               {view ? (
-                <LearningProfileView
-                  view={view}
-                  selectedTopic={selectedTopic}
-                  onSelectTopic={setSelectedTopic}
-                />
+                <CompactLearningProfileCard view={view} />
               ) : (
                 <div className="bg-surface-container-lowest rounded-[32px] p-8 border border-surface-dim/20 flex items-center justify-center min-h-[200px]">
                   <p className="font-body text-sm text-on-surface-variant">

@@ -13,6 +13,7 @@ import {
 import { FocusTimeline } from "@/components/LearningProfileView/FocusTimeline";
 import { LearningStyleNet } from "@/components/LearningProfileView/LearningStyleNet";
 import { GazeHeatmap } from "@/components/GazeHeatmap/GazeHeatmap";
+import { BrainModel, activationsForLesson } from "@/components/BrainModel/BrainModel";
 import TopBar from "@/components/ui/TopBar";
 
 function emailToName(email: string): string {
@@ -175,6 +176,26 @@ export default function StudentPage() {
             <p className="font-body text-on-surface-variant">Loading learning style…</p>
           </div>
         )}
+
+        {/* Simulated neural activation (TRIBE v2 preview) */}
+        {view ? (
+          (() => {
+            const latest = view.recent_focus?.[0];
+            const topic =
+              view.top_mastery?.[0]?.topic ||
+              view.top_struggles?.[0]?.topic ||
+              "Algebra";
+            const focus = latest?.focus_score ?? view.learning_profile?.rolling_focus_score ?? 0.6;
+            const acts = activationsForLesson(topic, focus);
+            return (
+              <BrainModel
+                activations={acts}
+                contextLabel={`Most recent lesson · ${topic}`}
+                heading="How this student's brain engages"
+              />
+            );
+          })()
+        ) : null}
 
         {/* Focus Timeline */}
         <section className="bg-surface-container-lowest rounded-[32px] p-8 border border-surface-dim/20">
