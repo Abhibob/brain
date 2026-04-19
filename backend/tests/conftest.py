@@ -52,6 +52,8 @@ celery_app.conf.task_eager_propagates = True
 
 
 TABLES_IN_ORDER = [
+    "tribe_predictions",
+    "research_neural_models",
     "asset_fit_scores",
     "lesson_plan_edges",
     "lesson_plan_nodes",

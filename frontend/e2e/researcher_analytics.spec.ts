@@ -19,5 +19,5 @@ test("researcher reads class roster", async ({ page }) => {
   await page.evaluate((value: string) => window.localStorage.setItem("edutrack.auth", value), JSON.stringify(researcher));
   await page.goto(`/classes/${cls.id}`);
 
-  await expect(page.getByText(/E2E Research Class/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "E2E Research Class" })).toBeVisible({ timeout: 15_000 });
 });

@@ -90,10 +90,15 @@ export default function DashboardPage() {
         {error ? <p className="error">{error}</p> : null}
         <section className="grid">
           {classes.map(item => (
-            <Link className="card" href={`/classes/${item.id}`} key={item.id}>
+            <Link
+              className="card"
+              href={auth.user.role === "researcher" ? `/research/classes/${item.id}/workbench` : `/classes/${item.id}`}
+              key={item.id}
+            >
               <h2>{item.title}</h2>
               <p>{item.description || "No description"}</p>
               {auth.user.role === "educator" ? <p className="muted">Code: {item.enrollment_code}</p> : null}
+              {auth.user.role === "researcher" ? <p className="muted">Open research workbench</p> : null}
             </Link>
           ))}
         </section>

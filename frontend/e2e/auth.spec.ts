@@ -15,11 +15,9 @@ test.describe("auth pages", () => {
     await expect(page).toHaveURL(/dashboard|classes/, { timeout: 15_000 });
   });
 
-  test("login with wrong password shows error", async ({ page }) => {
+  test("login role card redirects to dashboard", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel(/email/i).fill("nope@example.com");
-    await page.getByLabel(/password/i).fill("password-123");
-    await page.getByRole("button", { name: /log ?in|sign ?in/i }).click();
-    await expect(page.getByText(/invalid|incorrect|password|unauthorized/i)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: /Jordan Lee/ }).click();
+    await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
   });
 });

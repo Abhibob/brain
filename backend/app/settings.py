@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     youtube_search_base_url: str = "https://www.googleapis.com/youtube/v3/search"
     lesson_asset_model: str | None = None
 
+    tribe_v2_enabled: bool = False
+    tribe_v2_base_url: str | None = None
+    tribe_v2_api_key: str | None = None
+    tribe_v2_timeout_s: float = 20.0
+
     @property
     def resolved_lesson_asset_model(self) -> str:
         return self._strip_prefix(self.lesson_asset_model or self.llm_model)
