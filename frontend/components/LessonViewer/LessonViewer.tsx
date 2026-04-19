@@ -138,7 +138,6 @@ export function LessonViewer({ material }: { material: MaterialOut }) {
       )}
       {!ended && (
         <BehaviorTrackerMount
-          key={sessionId === null ? `fresh-${material.id}` : `active-${sessionId}`}
           materialId={material.id}
           rootRef={rootRef}
           onSession={handleSession}
@@ -147,7 +146,6 @@ export function LessonViewer({ material }: { material: MaterialOut }) {
       )}
       <div className="toolbar">
         <span className="chip">Lesson loaded</span>
-        {sessionId ? <span className="chip chip--accent">Session #{sessionId}</span> : null}
         {!ended && (
           <button className="button secondary" onClick={endSession} disabled={!sessionId}>
             Finish reading
