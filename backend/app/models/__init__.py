@@ -384,3 +384,54 @@ class PersonalizedLesson(Base):
     educator: Mapped[User] = relationship(foreign_keys=[educator_id])
     student: Mapped[User] = relationship(foreign_keys=[student_id])
     material: Mapped[Material] = relationship(foreign_keys=[base_material_id])
+
+
+class ResearchNeuralModel(Base):
+    __tablename__ = "research_neural_models"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), index=True)
+    version: Mapped[str] = mapped_column(String(128), index=True)
+    status: Mapped[str] = mapped_column(String(32), default="ready")
+    architecture: Mapped[dict[str, Any]] = mapped_column(json_type())
+    feature_schema: Mapped[list[str]] = mapped_column(json_type())
+    normalization: Mapped[dict[str, Any]] = mapped_column(json_type())
+    weights: Mapped[dict[str, Any]] = mapped_column(json_type())
+    metrics: Mapped[dict[str, Any]] = mapped_column(json_type())
+    loss_history: Mapped[list[dict[str, Any]]] = mapped_column(json_type())
+    sample_count: Mapped[int] = mapped_column(Integer, default=0)
+    student_sample_count: Mapped[int] = mapped_column(Integer, default=0)
+    trained_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    student: Mapped[User] = relationship(foreign_keys=[student_id])
+    class_: Mapped[Class | None] = relationship(foreign_keys=[class_id])
+
+
+class TribePrediction(Base):
+    __tablename__ = "tribe_predictions"
+    __table_args__ = (UniqueConstraint("student_id", "material_id", "stimulus_hash", name="uq_tribe_student_material_stimulus"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    material_id: Mapped[int] = mapped_column(ForeignKey("materials.id", ondelete="CASCADE"), index=True)
+    personalized_lesson_id: Mapped[int | None] = mapped_column(ForeignKey("personalized_lessons.id", ondelete="SET NULL"), index=True)
+    status: Mapped[str] = mapped_column(String(32), index=True)
+    stimulus_hash: Mapped[str] = mapped_column(String(64), index=True)
+    stimulus_title: Mapped[str] = mapped_column(String(255))
+    stimulus_kind: Mapped[str] = mapped_column(String(32), default="personalized_lesson")
+    model_version: Mapped[str | None] = mapped_column(String(128))
+    hemodynamic_lag_s: Mapped[float] = mapped_column(Float, default=5.0)
+    request_payload: Mapped[dict[str, Any]] = mapped_column(json_type())
+    response_payload: Mapped[dict[str, Any] | None] = mapped_column(json_type())
+    roi_timeseries: Mapped[dict[str, Any]] = mapped_column(json_type())
+    roi_summary: Mapped[dict[str, Any]] = mapped_column(json_type())
+    connectivity: Mapped[list[dict[str, Any]]] = mapped_column(json_type())
+    surface_summary: Mapped[dict[str, Any]] = mapped_column(json_type())
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    student: Mapped[User] = relationship(foreign_keys=[student_id])
+    material: Mapped[Material] = relationship(foreign_keys=[material_id])
+    personalized_lesson: Mapped[PersonalizedLesson | None] = relationship(foreign_keys=[personalized_lesson_id])

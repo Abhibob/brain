@@ -6,11 +6,12 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.verify/
 
 backend/.venv/
 backend/.verify/
 
 frontend/node_modules/
 frontend/.next/
+frontend/test-results/
 frontend/tsconfig.tsbuildinfo
-

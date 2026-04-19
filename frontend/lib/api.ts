@@ -174,6 +174,145 @@ export type LearningView = {
   narrative_notes: Array<{ note: string; ts: string }>;
 };
 
+export type ResearchWorkbench = {
+  class: { id: number; title: string; description: string | null; created_at: string };
+  students: Array<{
+    id: number;
+    email: string;
+    profile_entry_count: number;
+    neural_model: null | {
+      id: number;
+      status: string;
+      version: string;
+      sample_count: number;
+      student_sample_count: number;
+      confidence?: number;
+    };
+  }>;
+  materials: Array<{
+    id: number;
+    title: string;
+    type: string;
+    published_at: string | null;
+    section_count: number;
+    word_count: number;
+  }>;
+  tribe_predictions: Array<{
+    student_id: number;
+    material_id: number;
+    status: string;
+    model_version: string | null;
+    created_at: string;
+    completed_at: string | null;
+    error: string | null;
+  }>;
+};
+
+export type MechanisticView = {
+  student_id: number;
+  class_id: number | null;
+  model: {
+    id: number;
+    version: string;
+    status: string;
+    personalized: boolean;
+    architecture: Record<string, unknown>;
+    sample_count: number;
+    student_sample_count: number;
+    trained_at: string;
+    metrics: Record<string, number>;
+    loss_history: Array<{ epoch: number; loss: number }>;
+  };
+  session: {
+    id: number | null;
+    material_id: number | null;
+    started_at: string | null;
+    ended_at: string | null;
+    target: number | null;
+    stored_prediction: Record<string, unknown> | null;
+    heuristic_prediction: number | null;
+  };
+  backprop: {
+    prediction: number;
+    target: number | null;
+    loss: number;
+    learning_rate: number;
+    input_gradient_norm: number;
+  };
+  layers: Array<{
+    id: string;
+    label: string;
+    type: string;
+    nodes: Array<{ id: string; label: string; activation: number; delta?: number }>;
+  }>;
+  edges: Array<{ from: string; to: string; weight: number; gradient: number; layer: string }>;
+  heatmaps?: Array<{
+    id: string;
+    label: string;
+    rows: string[];
+    columns: string[];
+    implication?: string;
+    weights: number[][];
+    gradients: number[][];
+    contribution: number[][];
+    influence?: number[][];
+    stats: {
+      weights: { mean_abs: number; max_abs: number; energy: number };
+      gradients: { mean_abs: number; max_abs: number; energy: number };
+      contribution: { mean_abs: number; max_abs: number; energy: number };
+      influence?: { mean_abs: number; max_abs: number; energy: number };
+    };
+  }>;
+  features: Array<{
+    name: string;
+    value: number;
+    normalized_value: number;
+    gradient: number;
+    saliency: number;
+    direction: "raises_score" | "lowers_score";
+  }>;
+  personalization: Record<string, unknown>;
+};
+
+export type PersonalizationAudit = {
+  student_id: number;
+  material_id: number;
+  base_lesson: {
+    title: string;
+    sections: Array<{ id: number; title: string; content: string; order_index: number; word_count: number }>;
+  };
+  personalized: boolean;
+  personalized_lesson: null | {
+    id: number;
+    generated_content: string;
+    prompt_used: string;
+    assigned_at: string;
+  };
+  retrieved_profile_entries: ProfileEntry[];
+};
+
+export type TribePredictionPayload = {
+  status: string;
+  prediction: null | {
+    id: number;
+    student_id: number;
+    material_id: number;
+    personalized_lesson_id: number | null;
+    stimulus_hash: string;
+    stimulus_title: string;
+    stimulus_kind: string;
+    model_version: string | null;
+    hemodynamic_lag_s: number;
+    roi_timeseries: Record<string, number[]>;
+    roi_summary: Record<string, any>;
+    connectivity: Array<{ source: string; target: string; weight: number }>;
+    surface_summary: Record<string, any>;
+    error: string | null;
+    created_at: string;
+    completed_at: string | null;
+  };
+};
+
 export type LessonAsset = {
   id: number;
   kind: "reading" | "quiz" | "video" | "practice";
@@ -334,6 +473,21 @@ export const api = {
     }),
   getLearningView: (studentId: number) =>
     request<LearningView>(`/teacher/students/${studentId}/learning-view`),
+  getResearchWorkbench: (classId: number) =>
+    request<ResearchWorkbench>(`/research/classes/${classId}/workbench`),
+  trainResearchSurrogate: (studentId: number, classId?: number) =>
+    request<{ id: number; version: string; status: string; sample_count: number; student_sample_count: number; metrics: Record<string, number> }>(
+      `/research/students/${studentId}/neural-surrogate/train${classId !== undefined ? `?class_id=${classId}` : ""}`,
+      { method: "POST" }
+    ),
+  getMechanisticView: (studentId: number, classId?: number) =>
+    request<MechanisticView>(`/research/students/${studentId}/mechanistic${classId !== undefined ? `?class_id=${classId}` : ""}`),
+  getPersonalizationAudit: (materialId: number, studentId: number) =>
+    request<PersonalizationAudit>(`/research/materials/${materialId}/students/${studentId}/personalization-audit`),
+  getTribePrediction: (materialId: number, studentId: number) =>
+    request<TribePredictionPayload>(`/research/materials/${materialId}/students/${studentId}/tribe`),
+  runTribePrediction: (materialId: number, studentId: number) =>
+    request<TribePredictionPayload>(`/research/materials/${materialId}/students/${studentId}/tribe`, { method: "POST" }),
   createLessonPlan: (payload: {
     student_id: number;
     topic: string;

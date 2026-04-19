@@ -21,8 +21,8 @@ depends_on = None
 def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
-    role_enum = sa.Enum("student", "educator", "researcher", name="user_role")
-    material_enum = sa.Enum("lesson", "quiz", name="material_type")
+    role_enum = postgresql.ENUM("student", "educator", "researcher", name="user_role", create_type=False)
+    material_enum = postgresql.ENUM("lesson", "quiz", name="material_type", create_type=False)
     role_enum.create(op.get_bind(), checkfirst=True)
     material_enum.create(op.get_bind(), checkfirst=True)
 

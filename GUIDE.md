@@ -16,6 +16,7 @@ export EDUTRACK_DATABASE_URL="sqlite+aiosqlite:///$(pwd)/backend/.verify/edutrac
 export EDUTRACK_REDIS_URL="redis://localhost:6389/0"
 export EDUTRACK_CELERY_TASK_ALWAYS_EAGER=1
 export EDUTRACK_LLM_PROVIDER=deterministic
+export EDUTRACK_TRIBE_V2_ENABLED=0
 export NEXT_PUBLIC_API_URL="http://127.0.0.1:8000"
 ```
 
@@ -215,6 +216,7 @@ Allowed values:
 
 ```bash
 auto
+openai
 openrouter
 deterministic
 ```
@@ -227,7 +229,8 @@ auto
 
 Behavior:
 
-- `auto`: uses OpenRouter if `EDUTRACK_OPENROUTER_API_KEY` is set, otherwise deterministic fallback.
+- `auto`: uses OpenAI if `EDUTRACK_OPENAI_API_KEY` is set, then OpenRouter if `EDUTRACK_OPENROUTER_API_KEY` is set, otherwise fails loudly at the first LLM call.
+- `openai`: always uses the OpenAI-compatible direct base URL and requires `EDUTRACK_OPENAI_API_KEY`.
 - `openrouter`: always uses OpenRouter and requires `EDUTRACK_OPENROUTER_API_KEY`.
 - `deterministic`: local repeatable fallback, no external LLM calls.
 
@@ -241,6 +244,38 @@ Production:
 
 ```bash
 export EDUTRACK_LLM_PROVIDER=openrouter
+```
+
+### `EDUTRACK_OPENAI_API_KEY`
+
+Direct OpenAI API key. Used when `EDUTRACK_LLM_PROVIDER=openai` or when `auto` resolves to OpenAI.
+
+Default:
+
+```bash
+unset
+```
+
+Example:
+
+```bash
+export EDUTRACK_OPENAI_API_KEY="sk-..."
+```
+
+### `EDUTRACK_OPENAI_BASE_URL`
+
+OpenAI-compatible base URL for direct OpenAI calls.
+
+Default:
+
+```bash
+https://api.openai.com/v1
+```
+
+Example:
+
+```bash
+export EDUTRACK_OPENAI_BASE_URL="https://api.openai.com/v1"
 ```
 
 ### `EDUTRACK_OPENROUTER_API_KEY`
@@ -279,18 +314,18 @@ export EDUTRACK_OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
 
 ### `EDUTRACK_LLM_MODEL`
 
-OpenRouter chat model used for profile generation and lesson personalization.
+Chat model used for profile generation, lesson personalization, and lesson-asset generation unless `EDUTRACK_LESSON_ASSET_MODEL` is set.
 
 Default:
 
 ```bash
-anthropic/claude-opus-4-7
+gpt-5.4
 ```
 
 Example:
 
 ```bash
-export EDUTRACK_LLM_MODEL="anthropic/claude-opus-4-7"
+export EDUTRACK_LLM_MODEL="openai/gpt-5.4"
 ```
 
 You can use any OpenRouter model ID supported by your account:
@@ -306,7 +341,7 @@ Embedding model used when `EDUTRACK_LLM_PROVIDER=openrouter`.
 Default:
 
 ```bash
-openai/text-embedding-3-small
+text-embedding-3-small
 ```
 
 Example:
@@ -355,6 +390,120 @@ For fast local experimentation:
 
 ```bash
 export EDUTRACK_XGBOOST_MIN_SAMPLES=10
+```
+
+### `EDUTRACK_YOUTUBE_API_KEY`
+
+Optional YouTube Data API key used by lesson-studio video asset search.
+
+Default:
+
+```bash
+unset
+```
+
+Example:
+
+```bash
+export EDUTRACK_YOUTUBE_API_KEY="AIza..."
+```
+
+### `EDUTRACK_YOUTUBE_SEARCH_BASE_URL`
+
+Base URL for YouTube search API calls.
+
+Default:
+
+```bash
+https://www.googleapis.com/youtube/v3/search
+```
+
+Example:
+
+```bash
+export EDUTRACK_YOUTUBE_SEARCH_BASE_URL="https://www.googleapis.com/youtube/v3/search"
+```
+
+### `EDUTRACK_LESSON_ASSET_MODEL`
+
+Optional model override for lesson-studio asset generation. If unset, the backend uses `EDUTRACK_LLM_MODEL`.
+
+Default:
+
+```bash
+unset
+```
+
+Example:
+
+```bash
+export EDUTRACK_LESSON_ASSET_MODEL="openai/gpt-5.4"
+```
+
+### `EDUTRACK_TRIBE_V2_ENABLED`
+
+Enables external TRIBE v2 calls for researcher-only predicted fMRI views.
+
+Default:
+
+```bash
+False
+```
+
+Example:
+
+```bash
+export EDUTRACK_TRIBE_V2_ENABLED=1
+```
+
+When disabled, the API persists a `not_configured` status instead of fabricating fMRI data.
+
+### `EDUTRACK_TRIBE_V2_BASE_URL`
+
+Base URL for the external TRIBE v2 inference service. EduTrack posts to `${EDUTRACK_TRIBE_V2_BASE_URL}/predict`.
+
+Default:
+
+```bash
+unset
+```
+
+Example:
+
+```bash
+export EDUTRACK_TRIBE_V2_BASE_URL="https://tribe-v2.example.com"
+```
+
+### `EDUTRACK_TRIBE_V2_API_KEY`
+
+Optional bearer token for the external TRIBE v2 inference service.
+
+Default:
+
+```bash
+unset
+```
+
+Example:
+
+```bash
+export EDUTRACK_TRIBE_V2_API_KEY="replace-with-service-token"
+```
+
+### `EDUTRACK_TRIBE_V2_TIMEOUT_S`
+
+HTTP timeout in seconds for TRIBE v2 prediction requests.
+
+Default:
+
+```bash
+20.0
+```
+
+Example:
+
+```bash
+export EDUTRACK_TRIBE_V2_TIMEOUT_S=45
 ```
 
 ## Frontend Variables
@@ -433,6 +582,7 @@ export EDUTRACK_JWT_SECRET="dev-edutrack-change-me"
 export EDUTRACK_CELERY_TASK_ALWAYS_EAGER=1
 export EDUTRACK_LLM_PROVIDER=deterministic
 export EDUTRACK_XGBOOST_MIN_SAMPLES=50
+export EDUTRACK_TRIBE_V2_ENABLED=0
 export NEXT_PUBLIC_API_URL="http://127.0.0.1:8000"
 ```
 
@@ -466,10 +616,14 @@ export EDUTRACK_CELERY_TASK_ALWAYS_EAGER=0
 export EDUTRACK_LLM_PROVIDER=openrouter
 export EDUTRACK_OPENROUTER_API_KEY="sk-or-..."
 export EDUTRACK_OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
-export EDUTRACK_LLM_MODEL="anthropic/claude-opus-4-7"
+export EDUTRACK_LLM_MODEL="openai/gpt-5.4"
 export EDUTRACK_EMBEDDING_MODEL="openai/text-embedding-3-small"
 export EDUTRACK_EMBEDDING_DIM=1536
 export EDUTRACK_XGBOOST_MIN_SAMPLES=50
+export EDUTRACK_TRIBE_V2_ENABLED=1
+export EDUTRACK_TRIBE_V2_BASE_URL="https://tribe-v2.example.com"
+export EDUTRACK_TRIBE_V2_API_KEY="replace-with-service-token"
+export EDUTRACK_TRIBE_V2_TIMEOUT_S=45
 export NEXT_PUBLIC_API_URL="http://127.0.0.1:8000"
 ```
 
@@ -491,6 +645,8 @@ EDUTRACK_LLM_MODEL
 EDUTRACK_EMBEDDING_MODEL
 EDUTRACK_EMBEDDING_DIM=1536
 EDUTRACK_XGBOOST_MIN_SAMPLES=50
+EDUTRACK_TRIBE_V2_ENABLED=1
+EDUTRACK_TRIBE_V2_BASE_URL
 NEXT_PUBLIC_API_URL
 ```
 
@@ -500,6 +656,8 @@ Usually leave these at defaults unless you have a reason to change them:
 EDUTRACK_JWT_ALGORITHM=HS256
 EDUTRACK_ACCESS_TOKEN_MINUTES=60
 EDUTRACK_REFRESH_TOKEN_DAYS=14
+EDUTRACK_OPENAI_BASE_URL=https://api.openai.com/v1
 EDUTRACK_OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+EDUTRACK_YOUTUBE_SEARCH_BASE_URL=https://www.googleapis.com/youtube/v3/search
+EDUTRACK_TRIBE_V2_TIMEOUT_S=20
 ```
-
