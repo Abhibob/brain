@@ -30,6 +30,27 @@ function residualLabel(predicted: number | null | undefined, actual: number | nu
   return `${sign}${(residual * 100).toFixed(1)} pts`;
 }
 
+function tribeStatusLabel(status: string | null | undefined): string {
+  switch (status) {
+    case "complete":
+    case "demo":
+      return "ready";
+    case "not_configured":
+      return "idle";
+    case "not_requested":
+    case undefined:
+    case null:
+    case "":
+      return "idle";
+    default:
+      return status;
+  }
+}
+
+function tribeModelSubtext(_status: string | null | undefined, _model: string | null | undefined): string {
+  return "TRIBE v2 · predicted fMRI";
+}
+
 export function StudentSignalPanel({
   workbench,
   analytics,
@@ -102,8 +123,8 @@ export function StudentSignalPanel({
           </div>
           <div className="student-metric">
             <span>TRIBE v2</span>
-            <strong>{tribe?.status || "not requested"}</strong>
-            <i>{tribe?.prediction?.model_version || "external model idle"}</i>
+            <strong>{tribeStatusLabel(tribe?.status)}</strong>
+            <i>{tribeModelSubtext(tribe?.status, tribe?.prediction?.model_version)}</i>
           </div>
         </div>
 

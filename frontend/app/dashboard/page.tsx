@@ -280,6 +280,45 @@ export default function DashboardPage() {
               </div>
             </section>
 
+            {/* Class Cards */}
+            <section className="space-y-8">
+              <h2 className="font-headline text-4xl text-primary tracking-tight font-medium">
+                Your Classes
+              </h2>
+              {classes.length === 0 ? (
+                <p className="font-body text-on-surface-variant">
+                  You're not enrolled in any classes yet. Use the form below to join one.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {classes.map((item, i) => (
+                    <Link
+                      key={item.id}
+                      href={`/classes/${item.id}`}
+                      className="bg-surface-container-lowest rounded-[32px] p-8 hover:bg-surface-container-low transition-colors duration-300 shadow-[0px_10px_30px_rgba(27,28,26,0.02)] group border border-surface-dim/20"
+                    >
+                      <div className="flex justify-between items-start mb-6">
+                        <div
+                          className={`w-12 h-12 rounded-2xl ${CLASS_COLORS[i % CLASS_COLORS.length]} flex items-center justify-center`}
+                        >
+                          <MaterialIcon
+                            name={CLASS_ICONS[i % CLASS_ICONS.length]}
+                            className="text-2xl"
+                          />
+                        </div>
+                      </div>
+                      <h3 className="font-headline text-2xl text-primary font-medium mb-2 group-hover:text-primary-container transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="font-body text-sm text-on-surface-variant line-clamp-2">
+                        {item.description || "No description"}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
             {/* Enroll Form */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-surface-container-lowest rounded-[32px] p-8 shadow-[0px_10px_30px_rgba(27,28,26,0.04)] border border-surface-dim/20">
@@ -317,39 +356,6 @@ export default function DashboardPage() {
                     <MaterialIcon name="arrow_forward" className="text-[18px]" />
                   </button>
                 </form>
-              </div>
-            </section>
-
-            {/* Class Cards */}
-            <section className="space-y-8">
-              <h2 className="font-headline text-4xl text-primary tracking-tight font-medium">
-                Your Classes
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {classes.map((item, i) => (
-                  <Link
-                    key={item.id}
-                    href={`/classes/${item.id}`}
-                    className="bg-surface-container-lowest rounded-[32px] p-8 hover:bg-surface-container-low transition-colors duration-300 shadow-[0px_10px_30px_rgba(27,28,26,0.02)] group border border-surface-dim/20"
-                  >
-                    <div className="flex justify-between items-start mb-6">
-                      <div
-                        className={`w-12 h-12 rounded-2xl ${CLASS_COLORS[i % CLASS_COLORS.length]} flex items-center justify-center`}
-                      >
-                        <MaterialIcon
-                          name={CLASS_ICONS[i % CLASS_ICONS.length]}
-                          className="text-2xl"
-                        />
-                      </div>
-                    </div>
-                    <h3 className="font-headline text-2xl text-primary font-medium mb-2 group-hover:text-primary-container transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="font-body text-sm text-on-surface-variant line-clamp-2">
-                      {item.description || "No description"}
-                    </p>
-                  </Link>
-                ))}
               </div>
             </section>
           </>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from datetime import UTC, datetime
 from typing import Any
 
@@ -186,6 +187,130 @@ async def get_latest_prediction(
         .where(TribePrediction.student_id == student_id, TribePrediction.material_id == material_id)
         .order_by(TribePrediction.created_at.desc(), TribePrediction.id.desc())
         .limit(1)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Demo / fake prediction generator — used when TRIBE v2 is not configured so
+# the researcher view still has visibly different data per lesson.
+# ---------------------------------------------------------------------------
+
+_DEMO_ROIS = [
+    "IPS_L", "IPS_R",            # intraparietal sulcus — numerical / spatial reasoning
+    "dlPFC_L", "dlPFC_R",        # dorsolateral prefrontal — working memory
+    "ACC",                       # anterior cingulate — error monitoring
+    "Angular_L",                 # angular gyrus — symbol-to-meaning
+    "Broca",                     # language production
+    "Wernicke",                  # language comprehension
+    "V1",                        # primary visual
+    "FG_L",                      # fusiform — symbol recognition
+    "Hippocampus_L",             # memory consolidation
+]
+
+
+def _material_seed(material_id: int, student_id: int) -> float:
+    """Stable pseudo-random seed derived from the (student, material) pair."""
+    h = hashlib.sha256(f"{student_id}:{material_id}".encode()).digest()
+    return int.from_bytes(h[:4], "big") / 2**32
+
+
+def _pseudo_sin(i: int, seed: float, phase: float = 0.0) -> float:
+    x = i * 0.47 + seed * 11.3 + phase
+    return math.sin(x) * 0.5 + math.sin(x * 1.9 + seed * 2.7) * 0.3 + math.sin(x * 3.3 + seed) * 0.15
+
+
+def _demo_payload_for(material: Material, student_id: int) -> dict[str, Any]:
+    """Return a fabricated TRIBE-v2-shaped payload that varies per (student, material)."""
+    seed = _material_seed(material.id, student_id)
+    title_lower = (material.title or "").lower()
+    topic_bumps: dict[str, float] = {}
+    # Topic-driven biases so each lesson title steers which ROIs light up.
+    if any(k in title_lower for k in ("pythagorean", "triangle", "geometry", "graph", "slope")):
+        topic_bumps.update({"IPS_L": 0.45, "IPS_R": 0.4, "V1": 0.4, "FG_L": 0.35, "Angular_L": 0.3})
+    if any(k in title_lower for k in ("equation", "algebra", "linear", "system", "solve", "variable")):
+        topic_bumps.update({"IPS_L": 0.4, "dlPFC_L": 0.4, "dlPFC_R": 0.35, "ACC": 0.3, "Angular_L": 0.35})
+    if any(k in title_lower for k in ("reading", "vocabulary", "text", "passage")):
+        topic_bumps.update({"Broca": 0.45, "Wernicke": 0.45, "Angular_L": 0.4, "FG_L": 0.3})
+    if any(k in title_lower for k in ("quiz", "review", "checkpoint", "recall", "practice")):
+        topic_bumps.update({"Hippocampus_L": 0.45, "dlPFC_L": 0.3, "ACC": 0.35})
+    if not topic_bumps:
+        topic_bumps = {"IPS_L": 0.3, "dlPFC_L": 0.3, "Angular_L": 0.25, "ACC": 0.2}
+
+    # 24 "TRs" of fake BOLD per ROI. Add per-ROI phase offset + topic bump.
+    frames = 24
+    roi_timeseries: dict[str, list[float]] = {}
+    for idx, roi in enumerate(_DEMO_ROIS):
+        phase = idx * 0.6
+        bump = topic_bumps.get(roi, 0.0)
+        series: list[float] = []
+        for t in range(frames):
+            base = _pseudo_sin(t + idx, seed, phase)
+            # Decay hemodynamic-style response
+            envelope = math.exp(-((t - 10) ** 2) / 90.0) if bump > 0 else math.exp(-((t - 12) ** 2) / 180.0)
+            val = base * 0.35 + bump * envelope + (seed - 0.5) * 0.05
+            series.append(round(val, 6))
+        roi_timeseries[roi] = series
+
+    roi_summary: dict[str, dict[str, float]] = {}
+    for roi, series in roi_timeseries.items():
+        peak = max(series, key=lambda v: abs(v))
+        roi_summary[roi] = {
+            "mean": round(sum(series) / len(series), 6),
+            "peak": round(peak, 6),
+            "peak_t": series.index(peak),
+        }
+
+    top_rois = sorted(roi_summary.items(), key=lambda kv: abs(kv[1]["peak"]), reverse=True)[:6]
+    connectivity: list[dict[str, Any]] = []
+    for i, (a, _) in enumerate(top_rois):
+        for b, _ in top_rois[i + 1 :]:
+            # Deterministic pseudo-correlation from roi names + seed.
+            h = hashlib.sha256(f"{material.id}:{a}:{b}".encode()).digest()
+            weight = ((h[0] / 255.0) - 0.5) * 1.4
+            connectivity.append({"source": a, "target": b, "weight": round(weight, 4)})
+
+    surface_summary = {
+        "space": OUTPUT_SPACE,
+        "vertex_count": 10242,
+        "frame_count": frames,
+        "payload_url": None,
+        "hemispheres": ["lh", "rh"],
+        "roi_projection": True,
+    }
+
+    return {
+        "roi_timeseries": roi_timeseries,
+        "roi_summary": roi_summary,
+        "connectivity": connectivity,
+        "surface_summary": surface_summary,
+    }
+
+
+def demo_prediction(material: Material, student_id: int) -> TribePrediction:
+    """Build a non-persisted TribePrediction seeded by (material, student).
+
+    Used by the research workbench when real TRIBE v2 is disabled so the UI has
+    distinct, plausible content per lesson without any network call.
+    """
+    payload = _demo_payload_for(material, student_id)
+    return TribePrediction(
+        student_id=student_id,
+        material_id=material.id,
+        personalized_lesson_id=None,
+        status="demo",
+        stimulus_hash=stimulus_hash(f"demo:{material.id}:{student_id}"),
+        stimulus_title=material.title,
+        stimulus_kind="base_lesson",
+        model_version="tribe-v2-demo",
+        hemodynamic_lag_s=HEMODYNAMIC_LAG_S,
+        request_payload={"model": "tribe-v2-demo", "material_id": material.id, "student_id": student_id},
+        response_payload=None,
+        roi_timeseries=payload["roi_timeseries"],
+        roi_summary=payload["roi_summary"],
+        connectivity=payload["connectivity"],
+        surface_summary=payload["surface_summary"],
+        error=None,
+        completed_at=datetime.now(UTC),
     )
 
 
