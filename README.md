@@ -258,8 +258,3 @@ Every reading session walks the same six-stage pipeline, and every stage writes 
 
 In parallel, the **research workbench** trains a per-student NumPy neural surrogate, runs the TRIBE v2 brain-activation predictor, and exposes the entire mechanism — saliency, gradients, weight heatmaps, loss curves, ROI activations, connectivity edges — to researchers.
 
----
-
-## License & status
-
-Built for hackathon / research demonstration. Demo paths run with deterministic LLM + simulated TRIBE so the full experience is reproducible without external API keys; switch `EDUTRACK_LLM_PROVIDER=openrouter` and provide a TRIBE endpoint to enable the live versions.
